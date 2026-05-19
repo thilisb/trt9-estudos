@@ -97,6 +97,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 .toast.show{transform:translateY(0);opacity:1;}
 .empty{color:var(--muted);font-size:.73rem;text-align:center;padding:18px;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+/* ── Módulo Probabilidade ── */
+.prob-gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0 4px;}
+.prob-gauge-svg{width:200px;height:110px;}
+.prob-gauge-val{font-family:var(--serif);font-size:2.2rem;font-weight:700;text-anchor:middle;dominant-baseline:middle;}
+.prob-gauge-lbl{font-family:var(--mono);font-size:.58rem;fill:var(--muted);text-anchor:middle;}
+.prob-diag{font-size:.72rem;color:var(--muted);text-align:center;line-height:1.5;margin-top:6px;padding:8px 12px;background:var(--bg);border-radius:6px;border:1px solid var(--border);}
+.prob-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+@media(max-width:560px){.prob-2col{grid-template-columns:1fr;}}
+.prob-disc-table{width:100%;border-collapse:collapse;font-size:.68rem;}
+.prob-disc-table th{color:var(--muted);font-weight:500;text-align:left;padding:4px 6px;border-bottom:1px solid var(--border);font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;}
+.prob-disc-table td{padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.prob-disc-table tr:last-child td{border-bottom:none;}
+.alavanca-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.alavanca-nome{font-size:.73rem;font-weight:500;flex:1;}
+.alavanca-gain{font-size:.72rem;font-weight:700;color:var(--success);white-space:nowrap;}
+.alavanca-bar-wrap{width:80px;flex-shrink:0;}
+.prob-aviso{font-size:.63rem;color:var(--muted);text-align:center;padding:10px;border-top:1px solid var(--border);margin-top:4px;line-height:1.6;}
+.tag-critico{background:#3d1515;color:var(--danger);font-size:.56rem;padding:2px 5px;border-radius:99px;margin-left:4px;}
+.tag-alto{background:#3d2415;color:var(--warn);font-size:.56rem;padding:2px 5px;border-radius:99px;margin-left:4px;}
+
 </style>
 </head>
 <body>
@@ -134,6 +154,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     <button class="tab-nav" onclick="showPage('revisoes',this)">🔁 Revisões</button>
     <button class="tab-nav" onclick="showPage('erros',this)">🚨 Erros</button>
     <button class="tab-nav" onclick="showPage('historico',this)">📋 Histórico</button>
+    <button class="tab-nav" onclick="showPage('probabilidade',this)">📈 Prob.</button>
   </div>
 </div>
 
@@ -213,6 +234,49 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     <div class="card-title">📋 Histórico de Sessões</div>
     <div class="filtros" id="hist-filtros"></div>
     <div id="hist-list"></div>
+  </div>
+</div>
+
+<div class="page" id="page-probabilidade">
+  <div class="prob-2col">
+    <div class="card">
+      <div class="card-title">📍 Situação Atual</div>
+      <div class="prob-gauge-wrap">
+        <svg class="prob-gauge-svg" viewBox="0 0 200 110" id="gauge-atual-svg">
+          <path d="M20,100 A80,80 0 0,1 180,100" stroke="var(--border)" stroke-width="14" fill="none" stroke-linecap="round"/>
+          <path id="gauge-atual-arc" d="M20,100 A80,80 0 0,1 180,100" stroke="var(--danger)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="0 251.2"/>
+          <text id="gauge-atual-val" class="prob-gauge-val" x="100" y="90" fill="var(--accent)">—</text>
+          <text class="prob-gauge-lbl" x="100" y="108">probabilidade hoje</text>
+        </svg>
+      </div>
+      <div class="prob-diag" id="diag-atual">Calculando...</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 Projeção na Prova</div>
+      <div class="prob-gauge-wrap">
+        <svg class="prob-gauge-svg" viewBox="0 0 200 110" id="gauge-proj-svg">
+          <path d="M20,100 A80,80 0 0,1 180,100" stroke="var(--border)" stroke-width="14" fill="none" stroke-linecap="round"/>
+          <path id="gauge-proj-arc" d="M20,100 A80,80 0 0,1 180,100" stroke="var(--accent)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="0 251.2"/>
+          <text id="gauge-proj-val" class="prob-gauge-val" x="100" y="90" fill="var(--accent)">—</text>
+          <text class="prob-gauge-lbl" x="100" y="108">projeção ao fim do cronograma</text>
+        </svg>
+      </div>
+      <div class="prob-diag" id="diag-proj">Calculando...</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Acerto por Disciplina — Atual vs. Projetado</div>
+    <div style="overflow-x:auto">
+      <table class="prob-disc-table" id="prob-disc-table">
+        <thead><tr><th>Disciplina</th><th>Hoje</th><th>Projetado</th><th>Teto</th><th>Peso prova</th><th>Impacto</th></tr></thead>
+        <tbody id="prob-disc-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🚀 Maiores Alavancadores — onde focar</div>
+    <div id="prob-alavancas"></div>
+    <div class="prob-aviso">⚠️ Margem de incerteza do modelo: ±15 p.p. Os parâmetros históricos podem não refletir o próximo concurso. Use como bússola, não como previsão.</div>
   </div>
 </div>
 </div>
@@ -600,9 +664,301 @@ window.showPage=function(id,btn){
   document.getElementById('page-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
   render();
+  if(id==='probabilidade' && window.renderProbabilidade) window.renderProbabilidade();
 };
 
 popularTodosSelects();
+
+
+// ═══════════════════════════════════════════════════════
+// MÓDULO DE PROBABILIDADE DE CONVOCAÇÃO — TRT9
+// ═══════════════════════════════════════════════════════
+
+const PROB_CONFIG = {
+  // Questões na prova real (contadas na prova 2022)
+  questoesPorDisc: {
+    "Direito do Trabalho": 10,
+    "Dir. Processual do Trabalho": 10,
+    "Direito Civil": 5,
+    "Direito Processual Civil": 5,
+    "Direito Constitucional": 5,
+    "Direito Administrativo": 5,
+    "Língua Portuguesa": 14,
+    "Raciocínio Lógico-Matemático": 6
+  },
+  // Blocos: 'ger' ou 'esp'
+  bloco: {
+    "Direito do Trabalho": "esp",
+    "Dir. Processual do Trabalho": "esp",
+    "Direito Civil": "esp",
+    "Direito Processual Civil": "esp",
+    "Direito Constitucional": "esp",
+    "Direito Administrativo": "esp",
+    "Língua Portuguesa": "ger",
+    "Raciocínio Lógico-Matemático": "ger"
+  },
+  // Teto realista de acerto ao final do cronograma completo
+  teto: {
+    "Direito do Trabalho": 0.78,
+    "Dir. Processual do Trabalho": 0.75,
+    "Direito Civil": 0.76,
+    "Direito Processual Civil": 0.74,
+    "Direito Constitucional": 0.72,
+    "Direito Administrativo": 0.75,
+    "Língua Portuguesa": 0.85,
+    "Raciocínio Lógico-Matemático": 0.97
+  },
+  // Horas planejadas no cronograma
+  horasPlanejadas: {
+    "Direito do Trabalho": 75,
+    "Dir. Processual do Trabalho": 60,
+    "Direito Civil": 60,
+    "Direito Processual Civil": 114,
+    "Direito Constitucional": 72,
+    "Direito Administrativo": 162,
+    "Língua Portuguesa": 36,
+    "Raciocínio Lógico-Matemático": 15
+  },
+  // Default para subtópicos não estudados
+  defaultEsp: 0.20,
+  defaultGer: 0.80,
+  // Parâmetros históricos FCC (calibrados nos dados de 2017-2022)
+  mediaGrupoEsp: 0.60,
+  dpGrupoEsp: 0.11,
+  mediaGrupoGer: 0.68,
+  dpGrupoGer: 0.12,
+  // Mínimo de questões para considerar acerto real de um subtópico
+  minQSub: 10,
+  // Coeficiente de aprendizado da curva logarítmica
+  k: 0.025
+};
+
+// ── Acerto por subtópico com ajuste pelo mínimo de questões ──
+function acertoSubAjustado(disc, sub, sessoes) {
+  const qSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.q, 0);
+  const acSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.ac, 0);
+  const isGer = PROB_CONFIG.bloco[disc] === 'ger';
+  const def = isGer ? PROB_CONFIG.defaultGer : PROB_CONFIG.defaultEsp;
+  if (qSub === 0) return def;
+  const pesoReal = Math.min(qSub, PROB_CONFIG.minQSub) / PROB_CONFIG.minQSub;
+  const acertoReal = acSub / qSub;
+  return pesoReal * acertoReal + (1 - pesoReal) * def;
+}
+
+// ── Acerto por disciplina: média dos subtópicos ponderada por questões feitas ──
+// Se nenhum subtópico foi estudado, usa o default da disciplina inteira
+function acertoDiscAtual(disc, sessoes) {
+  const subs = DISC[disc] ? DISC[disc].subs : [];
+  let totalQ = 0, somaAcerto = 0;
+  const isGer = PROB_CONFIG.bloco[disc] === 'ger';
+  const def = isGer ? PROB_CONFIG.defaultGer : PROB_CONFIG.defaultEsp;
+
+  for (const sub of subs) {
+    const qSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.q, 0);
+    const pesoReal = Math.min(qSub, PROB_CONFIG.minQSub) / PROB_CONFIG.minQSub;
+    const acSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.ac, 0);
+    const acertoReal = qSub > 0 ? acSub / qSub : 0;
+    const acAjustado = pesoReal * acertoReal + (1 - pesoReal) * def;
+    // peso do subtópico = questões feitas + peso mínimo (1) para não ignorar não-estudados
+    const peso = Math.max(1, qSub);
+    somaAcerto += acAjustado * peso;
+    totalQ += peso;
+  }
+  return totalQ > 0 ? somaAcerto / totalQ : def;
+}
+
+// ── Horas estudadas por disciplina ──
+function horasDisc(disc, sessoes) {
+  // Estimativa: cada aula ≈ 50 min
+  return sessoes.filter(s => s.disc === disc).reduce((a,s) => a + s.aulas * (50/60), 0);
+}
+
+// ── Acerto projetado ao fim do cronograma (curva logarítmica com teto) ──
+function acertoProjetado(disc, baseAtual, horasFeitas) {
+  const teto = PROB_CONFIG.teto[disc];
+  const k = PROB_CONFIG.k;
+  const ganho = (teto - baseAtual) * (1 - Math.exp(-k * horasFeitas));
+  return Math.min(teto, baseAtual + ganho);
+}
+
+// ── T-Score por bloco ──
+function tScore(acerto, media, dp) {
+  return 50 + 10 * (acerto - media) / dp;
+}
+
+// ── Nota final FCC: NP_ger×1 + NP_esp×3 ──
+function notaFinal(acertoEsp, acertoGer) {
+  const npEsp = tScore(acertoEsp, PROB_CONFIG.mediaGrupoEsp, PROB_CONFIG.dpGrupoEsp);
+  const npGer = tScore(acertoGer, PROB_CONFIG.mediaGrupoGer, PROB_CONFIG.dpGrupoGer);
+  return npGer * 1 + npEsp * 3;
+}
+
+// ── Probabilidade de convocação: sigmoide calibrada nos dados históricos ──
+// Âncoras: 165→5% | 220→35% | 240→55% | 265→80% | 300→95%
+function probConvocacao(nota) {
+  const mid = 238;
+  const steep = 0.04;
+  return 1 / (1 + Math.exp(-steep * (nota - mid)));
+}
+
+// ── Cor do gauge conforme probabilidade ──
+function corGauge(p) {
+  if (p < 0.20) return 'var(--danger)';
+  if (p < 0.40) return 'var(--warn)';
+  if (p < 0.60) return 'var(--accent)';
+  return 'var(--success)';
+}
+
+// ── Diagnóstico textual honesto ──
+function diagnostico(p, cenario) {
+  if (cenario === 'atual') {
+    if (p < 0.05) return '⚠️ Abaixo da zona de convocação. Ponto de partida — o método e a consistência são o único caminho.';
+    if (p < 0.20) return '📉 Ainda fora da zona competitiva. Cada disciplina estudada move a agulha.';
+    if (p < 0.40) return '📊 Entrando na zona de risco. Progresso real, mas não há margem para relaxar.';
+    if (p < 0.60) return '🎯 Zona competitiva. Consistência no método define o resultado.';
+    return '✅ Zona de segurança. Mantenha o ritmo e não subestime a reta final.';
+  } else {
+    if (p < 0.20) return '⚠️ Projeção abaixo do necessário. Revise a alocação de horas — Proc. Trabalho e Administrativo precisam de mais atenção.';
+    if (p < 0.35) return '📉 Projeção ainda fora da zona competitiva. O cronograma atual não é suficiente sem execução rigorosa.';
+    if (p < 0.50) return '📊 Chance real, mas sem conforto. Cada ponto perdido em Específicos custa caro na padronização.';
+    if (p < 0.65) return '🎯 Projeção na zona de convocação do cadastro de reserva. Dependente de execução consistente.';
+    return '✅ Projeção sólida — se o cronograma for executado com método. Não abandone as revisões espaçadas.';
+  }
+}
+
+// ── Render do gauge SVG (semicírculo) ──
+function renderGauge(arcId, valId, prob) {
+  const circumference = Math.PI * 80; // semicírculo r=80
+  const dash = prob * circumference;
+  const arc = document.getElementById(arcId);
+  const val = document.getElementById(valId);
+  if (!arc || !val) return;
+  arc.setAttribute('stroke-dasharray', dash + ' ' + circumference);
+  arc.setAttribute('stroke', corGauge(prob));
+  val.textContent = Math.round(prob * 100) + '%';
+  val.setAttribute('fill', corGauge(prob));
+}
+
+// ── Render principal do módulo ──
+function renderProbabilidade() {
+  const sessoes = window._d ? window._d.sessoes : [];
+  const DISCS_ESP = ["Direito do Trabalho","Dir. Processual do Trabalho","Direito Civil","Direito Processual Civil","Direito Constitucional","Direito Administrativo"];
+  const DISCS_GER = ["Língua Portuguesa","Raciocínio Lógico-Matemático"];
+
+  // ── Calcular acerto atual por disciplina ──
+  const acAtual = {};
+  const acProj = {};
+  [...DISCS_ESP, ...DISCS_GER].forEach(disc => {
+    acAtual[disc] = acertoDiscAtual(disc, sessoes);
+    const hFeitas = horasDisc(disc, sessoes);
+    acProj[disc] = acertoProjetado(disc, acAtual[disc], PROB_CONFIG.horasPlanejadas[disc]);
+  });
+
+  // ── Acerto ponderado por bloco (atual) ──
+  const qEsp = DISCS_ESP.reduce((a,d) => a + PROB_CONFIG.questoesPorDisc[d], 0); // 40
+  const qGer = DISCS_GER.reduce((a,d) => a + PROB_CONFIG.questoesPorDisc[d], 0); // 20
+
+  const acEspAtual = DISCS_ESP.reduce((a,d) => a + acAtual[d] * PROB_CONFIG.questoesPorDisc[d], 0) / qEsp;
+  const acGerAtual = DISCS_GER.reduce((a,d) => a + acAtual[d] * PROB_CONFIG.questoesPorDisc[d], 0) / qGer;
+  const acEspProj = DISCS_ESP.reduce((a,d) => a + acProj[d] * PROB_CONFIG.questoesPorDisc[d], 0) / qEsp;
+  const acGerProj = DISCS_GER.reduce((a,d) => a + acProj[d] * PROB_CONFIG.questoesPorDisc[d], 0) / qGer;
+
+  // ── Notas finais e probabilidades ──
+  const notaAtual = notaFinal(acEspAtual, acGerAtual);
+  const notaProj = notaFinal(acEspProj, acGerProj);
+  const pAtual = probConvocacao(notaAtual);
+  const pProj = probConvocacao(notaProj);
+
+  // ── Gauges ──
+  renderGauge('gauge-atual-arc', 'gauge-atual-val', pAtual);
+  renderGauge('gauge-proj-arc', 'gauge-proj-val', pProj);
+
+  // ── Diagnósticos ──
+  const dAtual = document.getElementById('diag-atual');
+  const dProj = document.getElementById('diag-proj');
+  if (dAtual) dAtual.textContent = diagnostico(pAtual, 'atual') + ' (Nota estimada: ' + Math.round(notaAtual) + ' pts)';
+  if (dProj) dProj.textContent = diagnostico(pProj, 'proj') + ' (Nota projetada: ' + Math.round(notaProj) + ' pts)';
+
+  // ── Tabela por disciplina ──
+  const tbody = document.getElementById('prob-disc-tbody');
+  if (tbody) {
+    tbody.innerHTML = [...DISCS_ESP, ...DISCS_GER].map(disc => {
+      const qa = Math.round(acAtual[disc] * 100);
+      const qp = Math.round(acProj[disc] * 100);
+      const qt = Math.round(PROB_CONFIG.teto[disc] * 100);
+      const qprova = PROB_CONFIG.questoesPorDisc[disc];
+      const bloco = PROB_CONFIG.bloco[disc];
+      // Impacto: quanto 1pp de ganho nessa disc move a nota final
+      const npBase = notaFinal(acEspAtual, acGerAtual);
+      let acEspTest = acEspAtual, acGerTest = acGerAtual;
+      if (bloco === 'esp') {
+        acEspTest = acEspAtual + (0.01 * qprova / qEsp);
+      } else {
+        acGerTest = acGerAtual + (0.01 * qprova / qGer);
+      }
+      const impacto = notaFinal(acEspTest, acGerTest) - npBase;
+      const corA = qa >= 70 ? 'var(--success)' : qa >= 50 ? 'var(--accent)' : 'var(--danger)';
+      const corP = qp >= 70 ? 'var(--success)' : qp >= 55 ? 'var(--accent)' : 'var(--warn)';
+      const tagCrit = qa < 40 && bloco === 'esp' ? '<span class="tag-critico">CRÍTICO</span>' : '';
+      const tagAlto = qa >= 40 && qa < 60 && bloco === 'esp' ? '<span class="tag-alto">ATENÇÃO</span>' : '';
+      return '<tr>' +
+        '<td>' + disc + tagCrit + tagAlto + '</td>' +
+        '<td style="color:' + corA + ';font-weight:600">' + qa + '%</td>' +
+        '<td style="color:' + corP + ';font-weight:600">' + qp + '%</td>' +
+        '<td style="color:var(--muted)">' + qt + '%</td>' +
+        '<td style="color:var(--muted)">' + qprova + 'q / ' + bloco.toUpperCase() + '</td>' +
+        '<td style="color:var(--accent)">+' + impacto.toFixed(2) + 'pt/1pp</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ── Alavancadores: ganho potencial de probabilidade por disciplina ──
+  const alavEl = document.getElementById('prob-alavancas');
+  if (alavEl) {
+    const ganhos = [...DISCS_ESP, ...DISCS_GER].map(disc => {
+      const ganhoAcerto = acProj[disc] - acAtual[disc];
+      const bloco = PROB_CONFIG.bloco[disc];
+      const qprova = PROB_CONFIG.questoesPorDisc[disc];
+      // Simula nota com esse ganho aplicado
+      let acEspSim = acEspAtual, acGerSim = acGerAtual;
+      if (bloco === 'esp') {
+        acEspSim = DISCS_ESP.reduce((a,d) => {
+          const ac = d === disc ? acProj[d] : acAtual[d];
+          return a + ac * PROB_CONFIG.questoesPorDisc[d];
+        }, 0) / qEsp;
+      } else {
+        acGerSim = DISCS_GER.reduce((a,d) => {
+          const ac = d === disc ? acProj[d] : acAtual[d];
+          return a + ac * PROB_CONFIG.questoesPorDisc[d];
+        }, 0) / qGer;
+      }
+      const pSim = probConvocacao(notaFinal(acEspSim, acGerSim));
+      const gainPP = Math.round((pSim - pAtual) * 100);
+      return { disc, gainPP, ganhoAcerto: Math.round(ganhoAcerto * 100) };
+    }).sort((a,b) => b.gainPP - a.gainPP);
+
+    alavEl.innerHTML = ganhos.map((g, i) => {
+      const barW = Math.min(100, Math.round(g.gainPP * 2.5));
+      const cor = i === 0 ? 'var(--danger)' : i === 1 ? 'var(--warn)' : 'var(--accent)';
+      return '<div class="alavanca-item">' +
+        '<div>' +
+          '<div class="alavanca-nome">' + (i+1) + '. ' + g.disc + '</div>' +
+          '<div style="font-size:.62rem;color:var(--muted);margin-top:2px">Ganho potencial de acerto: +' + g.ganhoAcerto + 'pp</div>' +
+        '</div>' +
+        '<div class="alavanca-bar-wrap">' +
+          '<div style="background:var(--border);border-radius:99px;height:5px;overflow:hidden">' +
+            '<div style="width:' + barW + '%;height:100%;background:' + cor + ';border-radius:99px"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="alavanca-gain">+' + g.gainPP + 'pp prob</div>' +
+      '</div>';
+    }).join('');
+  }
+}
+
+// Expor para o render global
+window.renderProbabilidade = renderProbabilidade;
+
 </script>
 </body>
 </html>
