@@ -4,218 +4,129 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>TRT9 — Painel de Estudos</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#0d1117; --surface:#161b22; --surface2:#1c2330; --border:#30363d;
-  --accent:#e8a24a; --danger:#e05252; --success:#4aae6e; --warn:#e07a52;
-  --text:#e6edf3; --muted:#7d8590;
-  --mono:'DM Mono',monospace; --serif:'Fraunces',serif;
-}
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--border:#30363d;--accent:#e8a24a;--danger:#e05252;--success:#4aae6e;--warn:#e07a52;--text:#e6edf3;--muted:#7d8590;--mono:'DM Mono',monospace;--serif:'Fraunces',serif;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;}
-
-/* LOGIN */
-.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:100vh;padding:32px 20px;text-align:center;}
+.loading{display:flex;align-items:center;justify-content:center;min-height:100vh;font-size:.85rem;color:var(--muted);}
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 20px;text-align:center;}
 .login-title{font-family:var(--serif);font-size:2rem;font-weight:700;color:var(--accent);margin-bottom:8px;}
 .login-sub{font-size:.8rem;color:var(--muted);margin-bottom:40px;line-height:1.6;}
-.btn-google{display:flex;align-items:center;gap:12px;background:#fff;color:#1a1a1a;
-  border:none;border-radius:8px;padding:14px 24px;font-family:var(--mono);font-size:.88rem;
-  font-weight:500;cursor:pointer;transition:opacity .15s;margin:0 auto;}
-.btn-google:hover{opacity:.9;}
-.btn-google img{width:20px;height:20px;}
-
-/* LOADING */
-.loading{display:flex;align-items:center;justify-content:center;min-height:100vh;
-  font-size:.85rem;color:var(--muted);}
-
-/* NAV */
+.btn-google{display:flex;align-items:center;gap:12px;background:#fff;color:#1a1a1a;border:none;border-radius:8px;padding:14px 24px;font-family:var(--mono);font-size:.88rem;font-weight:500;cursor:pointer;margin:0 auto;}
+.btn-google img{width:20px;}
 .nav{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;}
 .nav-top{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .nav-title{font-family:var(--serif);font-size:1.1rem;font-weight:700;color:var(--accent);}
 .nav-sub{font-size:.6rem;color:var(--muted);margin-top:1px;}
 .nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
-.nav-user{font-size:.65rem;color:var(--muted);}
-.nav-actions{display:flex;gap:5px;}
-.btn-nav{border-radius:6px;font-family:var(--mono);font-size:.6rem;padding:3px 8px;cursor:pointer;border:1px solid;}
+.nav-user{font-size:.63rem;color:var(--muted);}
+.nav-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+.btn-nav{border-radius:6px;font-family:var(--mono);font-size:.58rem;padding:3px 7px;cursor:pointer;border:1px solid;}
 .btn-export{background:#15301f;color:var(--success);border-color:#2a5c3a;}
 .btn-import-label{background:var(--surface2);color:var(--muted);border-color:var(--border);cursor:pointer;}
 .btn-logout{background:#3d1515;color:var(--danger);border-color:#5a1f1f;}
+.sync-bar{font-size:.6rem;color:var(--muted);text-align:right;padding:2px 16px 3px;border-top:1px solid var(--border);}
+.sync-ok{color:var(--success);}.sync-err{color:var(--danger);}
 .tabs-nav{display:flex;border-top:1px solid var(--border);overflow-x:auto;}
-.tab-nav{flex:1;min-width:72px;padding:9px 6px;font-family:var(--mono);font-size:.65rem;
-  color:var(--muted);background:none;border:none;cursor:pointer;
-  border-bottom:2px solid transparent;transition:all .15s;text-align:center;white-space:nowrap;}
+.tab-nav{flex:1;min-width:68px;padding:9px 4px;font-family:var(--mono);font-size:.62rem;color:var(--muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center;white-space:nowrap;}
 .tab-nav.active{color:var(--accent);border-bottom-color:var(--accent);}
-
-/* PAGES */
-.page{display:none;padding:16px;max-width:960px;margin:0 auto;}
+.page{display:none;padding:14px;max-width:960px;margin:0 auto;}
 .page.active{display:block;}
-
-/* CARDS */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;}
-.card-title{font-family:var(--serif);font-size:.9rem;font-weight:700;color:var(--accent);
-  margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-
-/* STATS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;}
+.card-title{font-family:var(--serif);font-size:.88rem;font-weight:700;color:var(--accent);margin-bottom:10px;}
 .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 @media(max-width:480px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
 .stat-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center;}
 .stat-val{font-family:var(--serif);font-size:1.5rem;font-weight:700;color:var(--accent);line-height:1;}
 .stat-lbl{font-size:.58rem;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.07em;}
-
-/* FORM */
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 @media(max-width:500px){.form-grid{grid-template-columns:1fr;}}
-.field label{display:block;font-size:.62rem;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.08em;margin-bottom:4px;}
-.field select,.field input,.field textarea{
-  width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  color:var(--text);font-family:var(--mono);font-size:.8rem;padding:8px 10px;
-  outline:none;transition:border-color .2s;}
+.field label{display:block;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.field select,.field input,.field textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:.8rem;padding:7px 9px;outline:none;transition:border-color .2s;}
 .field select:focus,.field input:focus,.field textarea:focus{border-color:var(--accent);}
-.field textarea{resize:vertical;min-height:56px;}
+.field textarea{resize:vertical;min-height:54px;}
 .field-full{grid-column:1/-1;}
-.btn{background:var(--accent);color:#000;border:none;border-radius:6px;padding:10px 16px;
-  font-family:var(--mono);font-size:.82rem;font-weight:500;cursor:pointer;
-  transition:opacity .15s;width:100%;margin-top:10px;}
+.btn{background:var(--accent);color:#000;border:none;border-radius:6px;padding:9px 14px;font-family:var(--mono);font-size:.8rem;font-weight:500;cursor:pointer;width:100%;margin-top:8px;}
 .btn:hover{opacity:.88;}
-.btn-sm{width:auto;margin:0;padding:4px 10px;font-size:.68rem;}
+.btn-sm{width:auto;margin:0;padding:4px 9px;font-size:.68rem;}
 .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
 .btn-danger{background:#3d1515;color:var(--danger);border:1px solid #5a1f1f;}
-
-/* SYNC */
-.sync-indicator{font-size:.62rem;color:var(--muted);text-align:right;padding:2px 16px 4px;
-  border-top:1px solid var(--border);}
-.sync-ok{color:var(--success);}
-.sync-err{color:var(--danger);}
-
-/* PROGRESS */
-.disc-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .2s;}
-.disc-item:hover{border-color:var(--accent);}
-.disc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
-.disc-name{font-size:.8rem;font-weight:500;}
-.disc-stats{font-size:.68rem;color:var(--muted);}
-.bar{background:var(--border);border-radius:99px;height:5px;overflow:hidden;margin-bottom:3px;}
+.btn-ics{background:#1a2744;color:#4a9eed;border:1px solid #2a3d6b;width:auto;margin:0;padding:4px 9px;font-size:.68rem;border-radius:6px;font-family:var(--mono);cursor:pointer;}
+.disc-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:11px 13px;margin-bottom:7px;cursor:pointer;}
+.disc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.disc-name{font-size:.78rem;font-weight:500;}
+.disc-stats{font-size:.67rem;color:var(--muted);}
+.bar{background:var(--border);border-radius:99px;height:5px;overflow:hidden;margin-bottom:2px;}
 .bar-fill{height:100%;border-radius:99px;transition:width .4s ease;}
-.meta-row{display:flex;justify-content:space-between;font-size:.63rem;color:var(--muted);}
-.sub-list{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.sub-list{display:none;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);}
 .sub-list.open{display:block;}
-.sub-item{display:flex;align-items:center;gap:8px;padding:6px 0;
-  border-bottom:1px solid var(--border);font-size:.72rem;}
+.sub-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:.7rem;}
 .sub-item:last-child{border-bottom:none;}
 .sub-name{flex:1;line-height:1.3;}
-.sub-bar-wrap{width:60px;flex-shrink:0;}
+.sub-bw{width:56px;flex-shrink:0;}
 .sub-bar{background:var(--border);border-radius:99px;height:3px;overflow:hidden;}
 .sub-bar-fill{height:100%;border-radius:99px;}
-
-/* BADGE */
-.badge{display:inline-block;font-size:.56rem;padding:2px 5px;border-radius:99px;
-  font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-left:5px;}
-.b-max{background:#3d1515;color:var(--danger);}
-.b-alta{background:#3d2415;color:var(--warn);}
-.b-man{background:#15301f;color:var(--success);}
-
-/* REVISÕES */
-.rev-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:10px 14px;display:flex;justify-content:space-between;align-items:center;
-  font-size:.78rem;margin-bottom:6px;gap:8px;}
-.rev-item.urgente{border-color:var(--danger);}
-.rev-item.hoje{border-color:var(--accent);}
+.badge{display:inline-block;font-size:.56rem;padding:2px 5px;border-radius:99px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-left:5px;}
+.b-max{background:#3d1515;color:var(--danger);}.b-alta{background:#3d2415;color:var(--warn);}.b-man{background:#15301f;color:var(--success);}
+.rev-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;font-size:.75rem;margin-bottom:5px;gap:6px;}
+.rev-item.urgente{border-color:var(--danger);}.rev-item.hoje{border-color:var(--accent);}
 .rev-tag{font-size:.6rem;padding:2px 6px;border-radius:99px;font-weight:500;white-space:nowrap;flex-shrink:0;}
-.t-urgente{background:#3d1515;color:var(--danger);}
-.t-hoje{background:#3d2e10;color:var(--accent);}
-.t-proxima{background:var(--surface2);color:var(--muted);}
-
-/* HISTÓRICO */
-.hist-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:10px 14px;margin-bottom:6px;font-size:.75rem;}
-.hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
-.hist-disc{font-weight:500;}
-.hist-date{color:var(--muted);font-size:.68rem;}
-.hist-sub{color:var(--muted);font-size:.68rem;margin-bottom:4px;}
-.hist-nums{display:flex;gap:10px;font-size:.7rem;flex-wrap:wrap;}
-.acerto-bom{color:var(--success);}
-.acerto-ok{color:var(--accent);}
-.acerto-ruim{color:var(--danger);}
-
-/* CADERNO ERROS */
-.erro-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:12px 14px;margin-bottom:8px;}
-.erro-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
-.erro-disc{font-weight:500;font-size:.78rem;color:var(--danger);}
-.erro-sub{font-size:.68rem;color:var(--muted);margin-top:2px;}
-.erro-tema{font-size:.78rem;margin:5px 0;}
-.erro-desc{font-size:.72rem;color:var(--muted);line-height:1.5;margin-bottom:8px;}
-.erro-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.t-urgente{background:#3d1515;color:var(--danger);}.t-hoje{background:#3d2e10;color:var(--accent);}.t-proxima{background:var(--surface2);color:var(--muted);}
+.rev-actions{display:flex;gap:5px;align-items:center;flex-shrink:0;}
+.hist-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 13px;margin-bottom:5px;font-size:.73rem;}
+.hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
+.hist-disc{font-weight:500;}.hist-date{color:var(--muted);font-size:.67rem;}
+.hist-sub{color:var(--muted);font-size:.67rem;margin-bottom:3px;}
+.hist-nums{display:flex;gap:8px;font-size:.68rem;flex-wrap:wrap;}
+.acerto-bom{color:var(--success);}.acerto-ok{color:var(--accent);}.acerto-ruim{color:var(--danger);}
+.erro-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:11px 13px;margin-bottom:7px;}
+.erro-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;}
+.erro-disc{font-weight:500;font-size:.76rem;color:var(--danger);}
+.erro-sub{font-size:.67rem;color:var(--muted);margin-top:2px;}
+.erro-tema{font-size:.76rem;margin:4px 0;}
+.erro-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
 .erro-status{display:inline-block;font-size:.6rem;padding:2px 6px;border-radius:99px;}
-.status-pendente{background:#3d1515;color:var(--danger);}
-.status-revisado{background:#15301f;color:var(--success);}
-
-/* FILTROS */
-.filtros{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
-.filtro-btn{background:var(--surface2);border:1px solid var(--border);border-radius:99px;
-  color:var(--muted);font-family:var(--mono);font-size:.65rem;padding:3px 10px;
-  cursor:pointer;transition:all .15s;}
+.status-pendente{background:#3d1515;color:var(--danger);}.status-revisado{background:#15301f;color:var(--success);}
+.filtros{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;}
+.filtro-btn{background:var(--surface2);border:1px solid var(--border);border-radius:99px;color:var(--muted);font-family:var(--mono);font-size:.63rem;padding:3px 9px;cursor:pointer;}
 .filtro-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
-
-/* 2COL */
-.section-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-@media(max-width:640px){.section-2col{grid-template-columns:1fr;}}
-
-/* TOAST */
-.toast{position:fixed;bottom:20px;right:16px;left:16px;max-width:400px;margin:0 auto;
-  background:var(--success);color:#000;font-family:var(--mono);font-size:.78rem;
-  font-weight:500;padding:9px 16px;border-radius:8px;
-  transform:translateY(60px);opacity:0;transition:all .3s;z-index:999;text-align:center;}
+.s2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:640px){.s2col{grid-template-columns:1fr;}}
+.toast{position:fixed;bottom:18px;right:14px;left:14px;max-width:400px;margin:0 auto;background:var(--success);color:#000;font-family:var(--mono);font-size:.76rem;font-weight:500;padding:8px 14px;border-radius:8px;transform:translateY(60px);opacity:0;transition:all .3s;z-index:999;text-align:center;}
 .toast.show{transform:translateY(0);opacity:1;}
-
-.empty{color:var(--muted);font-size:.75rem;text-align:center;padding:20px;}
-::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+.empty{color:var(--muted);font-size:.73rem;text-align:center;padding:18px;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
 <div class="loading" id="loadingScreen">Carregando...</div>
 
-<!-- LOGIN -->
 <div class="login-screen" id="loginScreen" style="display:none">
   <div style="font-size:2rem;margin-bottom:16px">⚖️</div>
   <div class="login-title">TRT9 Estudos</div>
-  <div class="login-sub">
-    Analista Judiciário · Área Judiciária<br>
-    Seus dados sincronizados em qualquer dispositivo
-  </div>
+  <div class="login-sub">Analista Judiciário · Área Judiciária<br>Dados sincronizados em qualquer dispositivo</div>
   <button class="btn-google" onclick="loginGoogle()">
-    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
     Entrar com Google
   </button>
 </div>
 
-<!-- APP -->
 <div id="appScreen" style="display:none">
-
 <div class="nav">
   <div class="nav-top">
-    <div>
-      <div class="nav-title">TRT9 — Painel</div>
-      <div class="nav-sub">Analista Judiciário · FCC</div>
-    </div>
+    <div><div class="nav-title">TRT9 — Painel</div><div class="nav-sub">Analista Judiciário · FCC</div></div>
     <div class="nav-right">
       <div class="nav-user" id="navUser"></div>
       <div class="nav-actions">
         <button class="btn-nav btn-export" onclick="exportarJSON()">⬇ Export</button>
-        <label class="btn-nav btn-import-label">⬆ Import
-          <input type="file" accept=".json" onchange="importarJSON(event)" style="display:none">
-        </label>
+        <label class="btn-nav btn-import-label">⬆ Import<input type="file" accept=".json" onchange="importarJSON(event)" style="display:none"></label>
         <button class="btn-nav btn-logout" onclick="logout()">Sair</button>
       </div>
     </div>
   </div>
-  <div class="sync-indicator" id="syncIndicator">Sincronizando...</div>
+  <div class="sync-bar" id="syncBar">Sincronizando...</div>
   <div class="tabs-nav">
     <button class="tab-nav active" onclick="showPage('dashboard',this)">📊 Painel</button>
     <button class="tab-nav" onclick="showPage('sessao',this)">✏️ Registrar</button>
@@ -226,7 +137,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
   </div>
 </div>
 
-<!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <div class="card">
     <div class="card-title">📊 Visão Geral</div>
@@ -239,88 +149,54 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <div class="stat-box"><div class="stat-val" id="s-prog">0%</div><div class="stat-lbl">Progresso total</div></div>
     </div>
   </div>
-  <div class="section-2col">
+  <div class="s2col">
     <div class="card"><div class="card-title">🔁 Revisões urgentes</div><div id="dash-rev"></div></div>
     <div class="card"><div class="card-title">🚨 Erros pendentes</div><div id="dash-erros"></div></div>
   </div>
   <div class="card"><div class="card-title">📚 Progresso resumido</div><div id="dash-disc"></div></div>
 </div>
 
-<!-- REGISTRAR -->
 <div class="page" id="page-sessao">
   <div class="card">
     <div class="card-title">✏️ Registrar Sessão de Estudo</div>
     <div class="form-grid">
-      <div class="field">
-        <label>Disciplina</label>
-        <select id="f-disc" onchange="popularSubtopicos()"><option value="">Selecione...</option></select>
-      </div>
-      <div class="field">
-        <label>Subtópico (edital)</label>
-        <select id="f-sub"><option value="">Selecione a disciplina primeiro</option></select>
-      </div>
-      <div class="field">
-        <label>Aulas assistidas hoje</label>
-        <input type="number" id="f-aulas" min="0" max="30" placeholder="0">
-      </div>
-      <div class="field">
-        <label>Total de aulas do subtópico no Gran</label>
-        <input type="number" id="f-aulastotal" min="0" placeholder="Informe o total">
-      </div>
-      <div class="field">
-        <label>Questões feitas</label>
-        <input type="number" id="f-q" min="0" placeholder="0">
-      </div>
-      <div class="field">
-        <label>Questões corretas</label>
-        <input type="number" id="f-ac" min="0" placeholder="0">
-      </div>
-      <div class="field field-full">
-        <label>Observações / dúvidas</label>
-        <input type="text" id="f-obs" placeholder="Ex: dificuldade com prescrição intercorrente">
-      </div>
+      <div class="field"><label>Data do estudo</label><input type="date" id="f-data"></div>
+      <div class="field"><label>Disciplina</label><select id="f-disc" onchange="popularSubs('f-sub','f-disc')"><option value="">Selecione...</option></select></div>
+      <div class="field field-full"><label>Subtópico (edital)</label><select id="f-sub"><option value="">Selecione a disciplina primeiro</option></select></div>
+      <div class="field"><label>Aulas assistidas</label><input type="number" id="f-aulas" min="0" max="30" placeholder="0"></div>
+      <div class="field"><label>Total de aulas do subtópico no Gran</label><input type="number" id="f-aulastotal" min="0" placeholder="Informe o total"></div>
+      <div class="field"><label>Questões feitas</label><input type="number" id="f-q" min="0" placeholder="0"></div>
+      <div class="field"><label>Questões corretas</label><input type="number" id="f-ac" min="0" placeholder="0"></div>
+      <div class="field field-full"><label>Observações / dúvidas</label><input type="text" id="f-obs" placeholder="Ex: dificuldade com prescrição intercorrente"></div>
     </div>
     <button class="btn" onclick="registrarSessao()">Registrar sessão →</button>
   </div>
 </div>
 
-<!-- PROGRESSO -->
 <div class="page" id="page-progresso">
-  <div class="card">
-    <div class="card-title">📚 Progresso por Disciplina e Subtópico</div>
-    <div id="prog-list"></div>
-  </div>
+  <div class="card"><div class="card-title">📚 Progresso por Disciplina e Subtópico</div><div id="prog-list"></div></div>
 </div>
 
-<!-- REVISÕES -->
 <div class="page" id="page-revisoes">
   <div class="card">
-    <div class="card-title">🔁 Agenda de Revisões Espaçadas</div>
-    <p style="font-size:.72rem;color:var(--muted);margin-bottom:12px;">Revisão = 30 questões + leitura dos erros. Não releia passivamente.</p>
+    <div class="card-title">🔁 Revisões Espaçadas</div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:10px">Revisão = 30 questões + erros. Não releia passivamente.</p>
     <div id="rev-list"></div>
   </div>
 </div>
 
-<!-- ERROS -->
 <div class="page" id="page-erros">
   <div class="card">
     <div class="card-title">🚨 Registrar Erro</div>
     <div class="form-grid">
-      <div class="field">
-        <label>Disciplina</label>
-        <select id="e-disc" onchange="popularSubtopicoErro()"><option value="">Selecione...</option></select>
-      </div>
-      <div class="field">
-        <label>Subtópico</label>
-        <select id="e-sub"><option value="">Selecione a disciplina</option></select>
-      </div>
+      <div class="field"><label>Data do erro</label><input type="date" id="e-data"></div>
+      <div class="field"><label>Disciplina</label><select id="e-disc" onchange="popularSubs('e-sub','e-disc')"><option value="">Selecione...</option></select></div>
+      <div class="field field-full"><label>Subtópico</label><select id="e-sub"><option value="">Selecione a disciplina</option></select></div>
+      <div class="field field-full"><label>Tema do erro</label><input type="text" id="e-tema" placeholder="Ex: Diferença entre suspensão e interrupção do contrato"></div>
       <div class="field field-full">
-        <label>Tema do erro</label>
-        <input type="text" id="e-tema" placeholder="Ex: Diferença entre suspensão e interrupção do contrato">
-      </div>
-      <div class="field field-full">
-        <label>Descrição / o que precisa estudar</label>
-        <textarea id="e-desc" placeholder="Detalhe o ponto de dúvida, o que a questão cobrava, a resposta correta..."></textarea>
+        <label>Foto da questão (opcional)</label>
+        <input type="file" id="e-foto" accept="image/*" onchange="previewFoto(event)">
+        <img id="e-foto-preview" style="display:none;max-width:100%;margin-top:6px;border-radius:6px;border:1px solid var(--border)">
       </div>
     </div>
     <button class="btn" onclick="registrarErro()">Registrar erro →</button>
@@ -332,7 +208,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
   </div>
 </div>
 
-<!-- HISTÓRICO -->
 <div class="page" id="page-historico">
   <div class="card">
     <div class="card-title">📋 Histórico de Sessões</div>
@@ -340,206 +215,172 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     <div id="hist-list"></div>
   </div>
 </div>
-
-</div><!-- /appScreen -->
+</div>
 
 <div class="toast" id="toast"></div>
 
-<!-- FIREBASE SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── CONFIG FIREBASE ──────────────────────────────────────────────────────────
 const firebaseConfig = {
-  apiKey: "AIzaSyAQdnjWOipn3Jjx07IiB8wkAmTuk3I1Q-8",
-  authDomain: "trt9-estudos.firebaseapp.com",
-  projectId: "trt9-estudos",
-  storageBucket: "trt9-estudos.firebasestorage.app",
-  messagingSenderId: "135951266572",
-  appId: "1:135951266572:web:748c821b1303abdf940f29"
+  apiKey:"AIzaSyAQdnjWOipn3Jjx07IiB8wkAmTuk3I1Q-8",
+  authDomain:"trt9-estudos.firebaseapp.com",
+  projectId:"trt9-estudos",
+  storageBucket:"trt9-estudos.firebasestorage.app",
+  messagingSenderId:"135951266572",
+  appId:"1:135951266572:web:748c821b1303abdf940f29"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
 
-// Garantir que app começa invisível
-document.getElementById('loadingScreen').style.display = 'flex';
-document.getElementById('loginScreen').style.display = 'none';
-document.getElementById('appScreen').style.display = 'none';
+document.getElementById('loadingScreen').style.display='flex';
+document.getElementById('loginScreen').style.display='none';
+document.getElementById('appScreen').style.display='none';
 
-let unsubscribe = null;
+let unsubscribe=null;
+let syncIniciado=false;
 
-// ── AUTH ──────────────────────────────────────────────────────────────────────
-window.loginGoogle = async function() {
-  try {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-  } catch(e) {
-    if(e.code !== 'auth/popup-closed-by-user') {
-      showToast('Erro ao fazer login: ' + e.message, 'err');
-    }
-  }
-};
+function mostrarApp(user){
+  document.getElementById('loadingScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('navUser').textContent=user.displayName||user.email;
+  if(!syncIniciado){ syncIniciado=true; iniciarSync(user.uid); }
+}
 
-window.logout = async function() {
-  if(unsubscribe) unsubscribe();
-  await signOut(auth);
-  document.getElementById('appScreen').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
-};
+function mostrarLogin(){
+  document.getElementById('loadingScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appScreen').style.display='none';
+  syncIniciado=false;
+  if(unsubscribe){ unsubscribe(); unsubscribe=null; }
+}
 
-onAuthStateChanged(auth, user => {
-  document.getElementById('loadingScreen').style.display = 'none';
-  if(user) {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('appScreen').style.display = 'block';
-    document.getElementById('navUser').textContent = user.displayName || user.email;
-    iniciarSync(user.uid);
-  } else {
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('appScreen').style.display = 'none';
-    if(unsubscribe) unsubscribe();
-  }
+// Flag para evitar loop durante o redirect do Google
+let aguardandoRedirect = sessionStorage.getItem('aguardandoRedirect') === 'true';
+
+getRedirectResult(auth).then(result => {
+  sessionStorage.removeItem('aguardandoRedirect');
+  aguardandoRedirect = false;
+  if(result && result.user){ mostrarApp(result.user); }
+}).catch(e => {
+  sessionStorage.removeItem('aguardandoRedirect');
+  aguardandoRedirect = false;
 });
 
-// ── FIRESTORE SYNC ────────────────────────────────────────────────────────────
-let userId = null;
+onAuthStateChanged(auth, user => {
+  if(aguardandoRedirect) return;
+  if(user){ mostrarApp(user); }
+  else { mostrarLogin(); }
+});
 
-function iniciarSync(uid) {
-  userId = uid;
-  const ref = doc(db, 'usuarios', uid);
+window.loginGoogle = async function(){
+  sessionStorage.setItem('aguardandoRedirect', 'true');
+  const provider = new GoogleAuthProvider();
+  await signInWithRedirect(auth, provider);
+};
+
+window.logout=async function(){
+  syncIniciado=false;
+  if(unsubscribe){ unsubscribe(); unsubscribe=null; }
+  await signOut(auth);
+};
+
+let userId=null;
+function iniciarSync(uid){
+  userId=uid;
   setSyncStatus('Sincronizando...');
-
-  unsubscribe = onSnapshot(ref, snap => {
-    if(snap.exists()) {
-      const d = snap.data();
-      window._dados.sessoes   = d.sessoes   || [];
-      window._dados.revisoes  = d.revisoes  || [];
-      window._dados.erros     = d.erros     || [];
-      window._dados.subTotais = d.subTotais || {};
+  unsubscribe=onSnapshot(doc(db,'usuarios',uid),snap=>{
+    if(snap.exists()){
+      const d=snap.data();
+      window._d.sessoes=d.sessoes||[];
+      window._d.revisoes=d.revisoes||[];
+      window._d.erros=d.erros||[];
+      window._d.subTotais=d.subTotais||{};
     }
-    setSyncStatus('✓ Sincronizado', true);
+    setSyncStatus('✓ Sincronizado',true);
     render();
-  }, err => {
-    setSyncStatus('⚠ Erro de conexão', false, true);
-  });
+  },()=>setSyncStatus('⚠ Erro de conexão',false,true));
 }
 
-async function salvarNuvem() {
-  if(!userId) return;
-  try {
-    await setDoc(doc(db, 'usuarios', userId), window._dados, { merge: true });
-    setSyncStatus('✓ Salvo na nuvem', true);
-  } catch(e) {
-    setSyncStatus('⚠ Erro ao salvar', false, true);
-  }
+window._salvar=async function(){
+  if(!userId)return;
+  try{
+    await setDoc(doc(db,'usuarios',userId),window._d,{merge:true});
+    setSyncStatus('✓ Salvo',true);
+  }catch(e){setSyncStatus('⚠ Erro ao salvar',false,true);}
+};
+
+function setSyncStatus(msg,ok=false,err=false){
+  const el=document.getElementById('syncBar');
+  el.textContent=msg;
+  el.className='sync-bar'+(ok?' sync-ok':err?' sync-err':'');
 }
-
-function setSyncStatus(msg, ok=false, err=false) {
-  const el = document.getElementById('syncIndicator');
-  el.textContent = msg;
-  el.className = 'sync-indicator' + (ok?' sync-ok':err?' sync-err':'');
-}
-
-// Expor salvarNuvem para o resto do código
-window._salvarNuvem = salvarNuvem;
-
 </script>
 
 <script>
-// ══════════════════════════════════════════════════════════════
-// DADOS DO EDITAL
-// ══════════════════════════════════════════════════════════════
-const DISCIPLINAS = {
-  "Direito do Trabalho": {
-    total:134, prior:"ALTA", cor:"#e07a52",
-    subs:["Princípios e fontes do Direito do Trabalho","Direitos constitucionais — art. 7º CF","Relação de emprego — requisitos e distinção","Trabalho autônomo, eventual, temporário, avulso e intermitente","Empregado e empregador — conceito e poderes","Grupo econômico e sucessão de empregadores","CTPS — emissão e anotações","Contrato individual de trabalho — conceito e classificação","Alteração do contrato — jus variandi","Suspensão e interrupção do contrato","Rescisão — justas causas e despedida indireta","Dispensa arbitrária, coletiva, culpa recíproca e indenização","Aviso prévio","Estabilidade e garantias provisórias de emprego","Jornada de trabalho e jornada in itinere","Períodos de descanso — intervalo e DSR","Trabalho noturno, extraordinário e compensação","Salário mínimo","Férias — direito, concessão e remuneração","Salário e remuneração — composição e modalidades","13º salário","Equiparação salarial e desvio de função","FGTS","Prescrição e decadência trabalhista","Segurança e medicina — CIPA e EPI","Atividades insalubres e perigosas","Proteção ao trabalho da mulher, gestante e menor","Estabilidade da gestante e licença-maternidade","Direito coletivo — liberdade sindical","Convenções e acordos coletivos","Direito de greve e serviços essenciais","Teletrabalho — Lei 13.467/2017","Dano moral, assédio moral e sexual","Responsabilidade civil trabalhista e acidentes","Reforma Trabalhista — Lei 13.467/2017","Súmulas e OJs do TST — Direito do Trabalho","Súmulas vinculantes do STF — Direito do Trabalho"]
-  },
-  "Dir. Processual do Trabalho": {
-    total:94, prior:"MÁXIMA", cor:"#e05252",
-    subs:["Organização da Justiça do Trabalho — Varas, TRTs e TST","Competência da Justiça do Trabalho","Serviços auxiliares — secretarias, distribuidores e oficiais","Peritos judiciais e honorários periciais","Ministério Público do Trabalho","Princípios gerais do processo trabalhista","Prescrição, decadência e prescrição intercorrente","Atos, termos e prazos processuais","Custas, emolumentos e isenções","Partes, procuradores e jus postulandi","Litisconsórcio e assistência judiciária","Honorários advocatícios","Nulidades e exceções processuais","Responsabilidade por dano processual","Conflitos de jurisdição e competência","Audiências — conciliação, instrução e julgamento","Notificação, arquivamento, revelia e confissão","Provas no processo do trabalho","Decisão e sua eficácia","Dissídios individuais — reclamação escrita e verbal","Procedimento ordinário e sumaríssimo","Inquérito para apuração de falta grave","Ação rescisória trabalhista","Mandado de segurança trabalhista","Ação civil pública trabalhista","Incidente de desconsideração da personalidade jurídica","Jurisdição voluntária — homologação de acordo extrajudicial","Liquidação — cálculo, artigos e arbitramento","Dissídios coletivos","Execução provisória e definitiva","Execução contra Fazenda Pública e massa falida","Citação, depósito e nomeação de bens","Penhora — penhoráveis e impenhoráveis — bem de família","Seguro-fiança e seguro-garantia judicial","Embargos à execução e impugnação à sentença","Embargos de terceiros","Praça, leilão e arrematação","Recursos no processo do trabalho","Processo Judicial Eletrônico","Resoluções CSJT 174/2016 e 288/2021","Súmulas e OJs do TST — Processo do Trabalho","Lei 6.858/80 e Lei 5.584/70"]
-  },
-  "Direito Civil": {
-    total:231, prior:"ALTA", cor:"#e07a52",
-    subs:["LINDB — Lei de Introdução às Normas do Direito Brasileiro","Eficácia, aplicação e interpretação da lei","Pessoas naturais — personalidade e capacidade","Direitos da personalidade","Pessoas jurídicas","Domicílio civil","Bens — classificação","Fatos jurídicos — negócios jurídicos","Atos lícitos e ilícitos","Prescrição e decadência","Obrigações — disposições gerais","Obrigações de dar, fazer e não fazer","Adimplemento e extinção das obrigações","Inadimplemento — mora e perdas e danos","Contratos — disposições gerais","Compra e venda","Prestação de serviço","Mandato","Transação","Empreitada","Responsabilidade civil","Penhor, hipoteca e anticrese"]
-  },
-  "Direito Processual Civil": {
-    total:147, prior:"ALTA", cor:"#e07a52",
-    subs:["Princípios gerais e fontes — CPC/2015","Jurisdição — conceito e princípios","Competência — critérios e modificações","Conflito de competência","Direito de ação — elementos e condições","Conexão, continência e cumulação de ações","Processo e procedimento — pressupostos","Partes e procuradores — capacidade e legitimação","Despesas, honorários e gratuidade","Litisconsórcio","Intervenção de terceiros","Incidente de desconsideração da personalidade jurídica","Amicus curiae","Poderes, deveres e responsabilidades do juiz","Impedimento e suspeição","Auxiliares da Justiça","MP, Advocacia Pública e Defensoria","Prerrogativas da Fazenda Pública","Atos processuais — forma, tempo e prazos","Citação, cartas e intimações","Nulidades processuais","Tutela provisória — urgência e evidência","Formação, suspensão e extinção do processo","Petição inicial — requisitos e pedido","Contestação, reconvenção e revelia","Saneamento e julgamento conforme estado","Provas — ônus, meios e valoração","Sentença — conceito, elementos e efeitos","Coisa julgada","Liquidação de sentença","Cumprimento de sentença","Recursos — disposições gerais e embargos","Repercussão geral e recursos repetitivos","Processo de execução — princípios","Execução contra Fazenda Pública — precatórios","Penhora e expropriação","Embargos à execução e exceção de pré-executividade","Procedimentos especiais — MS, ACP, monitória","Controle de constitucionalidade no CPC","IRDR e reclamação","Ação rescisória"]
-  },
-  "Direito Constitucional": {
-    total:151, prior:"MÁXIMA", cor:"#e05252",
-    subs:["Princípios fundamentais da CF","Direitos e deveres individuais e coletivos","Direitos sociais","Direitos de nacionalidade","Direitos políticos","Ações constitucionais — HC, HD, MS, MI, Ação Popular","Ação civil pública constitucional","Controle difuso de constitucionalidade","Controle concentrado — ADI, ADC, ADPF","Súmula vinculante e repercussão geral","Organização político-administrativa","Bens e competências — União, Estados, DF e Municípios","Intervenção federal","Administração Pública — disposições gerais","Servidores públicos","Poder Executivo — atribuições do Presidente","Poder Legislativo — órgãos e atribuições","Processo legislativo","Fiscalização contábil, financeira e orçamentária","Poder Judiciário — disposições gerais","STF e CNJ","STJ e TRFs","Tribunais do Trabalho — TST, TRTs e CSJT","Funções essenciais à Justiça","Ordem econômica e financeira","Finanças públicas e orçamentos","Ordem social — seguridade social"]
-  },
-  "Direito Administrativo": {
-    total:85, prior:"MÁXIMA", cor:"#e05252",
-    subs:["Princípios básicos da Administração Pública","Poder hierárquico e disciplinar","Poder regulamentar e de polícia","Ato administrativo — conceito e atributos","Anulação, revogação e convalidação","Discricionariedade e vinculação","Administração direta e indireta","Autarquias, fundações, empresas públicas e SEM","Consórcios públicos — Lei 11.107/2005","Órgãos públicos","Servidores públicos — cargo, emprego e função","Lei 8.112/90 — provimento, vacância e remoção","Lei 8.112/90 — direitos, licenças e afastamentos","Lei 8.112/90 — regime disciplinar e PAD","Processo administrativo — Lei 9.784/1999","Controle administrativo, judicial e legislativo","Responsabilidade extracontratual do Estado","Improbidade Administrativa — Lei 8.429/1992","Lei 11.416/2006","Licitações — Lei 14.133/2021","Serviços públicos — regime jurídico","Delegação de serviço público","Bens públicos","Intervenção do Estado na propriedade","Terceiro Setor — entes paraestatais"]
-  },
-  "Língua Portuguesa": {
-    total:71, prior:"MANUTENÇÃO", cor:"#4aae6e",
-    subs:["Ortografia oficial","Acentuação gráfica","Sinais de pontuação","Crase","Flexão nominal e verbal","Pronomes — emprego e colocação","Coesão e coerência textual","Tempos e modos verbais — vozes do verbo","Concordância nominal e verbal","Regência nominal e verbal","Morfossintaxe — classes de palavras","Coordenação e subordinação","Compreensão e interpretação de textos","Tipos e gêneros textuais","Figuras de linguagem e argumentação","Discurso direto, indireto e indireto livre","Redação dissertativo-argumentativa"]
-  },
-  "Raciocínio Lógico-Matemático": {
-    total:86, prior:"MANUTENÇÃO", cor:"#4aae6e",
-    subs:["Números inteiros e racionais — operações","Múltiplos, divisores e problemas","Frações","Razões, proporções e divisão proporcional","Regra de três","Porcentagem e problemas","Lógica — relações e dedução","Raciocínio verbal e matemático","Raciocínio sequencial e orientação espacial","Formação de conceitos","Lógica proposicional"]
-  }
+const DISC={
+  "Direito do Trabalho":{total:134,prior:"ALTA",cor:"#e07a52",subs:["Princípios e fontes do Direito do Trabalho","Direitos constitucionais — art. 7º CF","Relação de emprego — requisitos e distinção","Trabalho autônomo, eventual, temporário, avulso e intermitente","Empregado e empregador — conceito e poderes","Grupo econômico e sucessão de empregadores","CTPS — emissão e anotações","Contrato individual — conceito e classificação","Alteração do contrato — jus variandi","Suspensão e interrupção do contrato","Rescisão — justas causas e despedida indireta","Dispensa arbitrária, coletiva e culpa recíproca","Aviso prévio","Estabilidade e garantias provisórias","Jornada de trabalho e jornada in itinere","Descansos — intervalo e DSR","Trabalho noturno, extraordinário e compensação","Salário mínimo","Férias — direito, concessão e remuneração","Salário e remuneração — composição","13º salário","Equiparação salarial e desvio de função","FGTS","Prescrição e decadência trabalhista","Segurança e medicina — CIPA e EPI","Atividades insalubres e perigosas","Proteção ao trabalho da mulher, gestante e menor","Estabilidade da gestante e licença-maternidade","Direito coletivo — liberdade sindical","Convenções e acordos coletivos","Direito de greve","Teletrabalho — Lei 13.467/2017","Dano moral e assédio","Responsabilidade civil e acidentes","Reforma Trabalhista — Lei 13.467/2017","Súmulas e OJs do TST","Súmulas vinculantes do STF"]},
+  "Dir. Processual do Trabalho":{total:94,prior:"MÁXIMA",cor:"#e05252",subs:["Organização da Justiça do Trabalho","Competência — Varas, TRTs e TST","Serviços auxiliares","Peritos e honorários periciais","Ministério Público do Trabalho","Princípios gerais do processo trabalhista","Prescrição, decadência e prescrição intercorrente","Atos, termos e prazos processuais","Custas, emolumentos e isenções","Partes e jus postulandi","Litisconsórcio e assistência judiciária","Honorários advocatícios","Nulidades e exceções","Responsabilidade por dano processual","Conflitos de competência","Audiências — conciliação, instrução e julgamento","Revelia e confissão","Provas no processo do trabalho","Decisão e eficácia","Dissídios individuais","Procedimento ordinário e sumaríssimo","Inquérito para apuração de falta grave","Ação rescisória trabalhista","Mandado de segurança trabalhista","Ação civil pública","Incidente de desconsideração da personalidade jurídica","Homologação de acordo extrajudicial","Liquidação da sentença","Dissídios coletivos","Execução provisória e definitiva","Execução contra Fazenda Pública e massa falida","Penhora e impenhorabilidade","Seguro-fiança e seguro-garantia","Embargos à execução","Embargos de terceiros","Arrematação e custas","Recursos no processo do trabalho","Processo Judicial Eletrônico","Resoluções CSJT 174/2016 e 288/2021","Súmulas e OJs do TST","Lei 6.858/80 e Lei 5.584/70"]},
+  "Direito Civil":{total:231,prior:"ALTA",cor:"#e07a52",subs:["LINDB","Eficácia e interpretação da lei","Pessoas naturais — personalidade e capacidade","Direitos da personalidade","Pessoas jurídicas","Domicílio civil","Bens — classificação","Negócios jurídicos","Atos lícitos e ilícitos","Prescrição e decadência","Obrigações — disposições gerais","Obrigações de dar, fazer e não fazer","Adimplemento e extinção","Inadimplemento — mora e perdas e danos","Contratos — disposições gerais","Compra e venda","Prestação de serviço","Mandato","Transação","Empreitada","Responsabilidade civil","Penhor, hipoteca e anticrese"]},
+  "Direito Processual Civil":{total:147,prior:"ALTA",cor:"#e07a52",subs:["Princípios gerais — CPC/2015","Jurisdição","Competência","Conflito de competência","Direito de ação","Conexão e continência","Pressupostos processuais","Partes e procuradores","Despesas e honorários","Litisconsórcio","Intervenção de terceiros","Desconsideração da personalidade jurídica","Amicus curiae","Poderes do juiz","Impedimento e suspeição","Auxiliares da Justiça","MP, Advocacia Pública e Defensoria","Fazenda Pública em juízo","Atos processuais — prazos","Citação e intimações","Nulidades","Tutela provisória","Formação e extinção do processo","Petição inicial","Contestação e revelia","Saneamento","Provas","Sentença","Coisa julgada","Liquidação","Cumprimento de sentença","Recursos — disposições gerais","Repercussão geral e repetitivos","Execução — princípios","Execução contra Fazenda Pública","Penhora e expropriação","Embargos à execução","Procedimentos especiais","Controle de constitucionalidade","IRDR e reclamação","Ação rescisória"]},
+  "Direito Constitucional":{total:151,prior:"MÁXIMA",cor:"#e05252",subs:["Princípios fundamentais","Direitos individuais e coletivos","Direitos sociais","Direitos de nacionalidade","Direitos políticos","HC, HD, MS, MI e Ação Popular","Ação civil pública","Controle difuso","Controle concentrado — ADI, ADC, ADPF","Súmula vinculante e repercussão geral","Organização político-administrativa","Competências da União, Estados e Municípios","Intervenção federal","Administração Pública","Servidores públicos","Poder Executivo","Poder Legislativo","Processo legislativo","Fiscalização contábil e orçamentária","Poder Judiciário","STF e CNJ","STJ e TRFs","Tribunais do Trabalho — TST, TRTs e CSJT","Funções essenciais à Justiça","Ordem econômica","Finanças públicas","Ordem social"]},
+  "Direito Administrativo":{total:85,prior:"MÁXIMA",cor:"#e05252",subs:["Princípios da Administração Pública","Poder hierárquico e disciplinar","Poder regulamentar e de polícia","Ato administrativo — conceito e atributos","Anulação, revogação e convalidação","Discricionariedade e vinculação","Administração direta e indireta","Autarquias, fundações, EP e SEM","Consórcios públicos","Órgãos públicos","Servidores — cargo, emprego e função","Lei 8.112/90 — provimento e vacância","Lei 8.112/90 — direitos e licenças","Lei 8.112/90 — regime disciplinar e PAD","Lei 9.784/99 — processo administrativo","Controle administrativo e judicial","Responsabilidade do Estado","Improbidade — Lei 8.429/92","Lei 11.416/2006","Licitações — Lei 14.133/2021","Serviços públicos","Delegação de serviço público","Bens públicos","Intervenção na propriedade","Terceiro Setor"]},
+  "Língua Portuguesa":{total:71,prior:"MANUTENÇÃO",cor:"#4aae6e",subs:["Ortografia","Acentuação","Pontuação","Crase","Flexão nominal e verbal","Pronomes","Coesão e coerência","Tempos e modos verbais","Concordância","Regência","Morfossintaxe","Coordenação e subordinação","Interpretação de textos","Tipos e gêneros textuais","Figuras de linguagem","Discurso direto e indireto","Redação dissertativo-argumentativa"]},
+  "Raciocínio Lógico-Matemático":{total:86,prior:"MANUTENÇÃO",cor:"#4aae6e",subs:["Números inteiros e racionais","Múltiplos e divisores","Frações","Razões e proporções","Regra de três","Porcentagem","Lógica — relações e dedução","Raciocínio verbal e matemático","Raciocínio sequencial","Formação de conceitos","Lógica proposicional"]}
 };
+const DNAMES=Object.keys(DISC);
+const TOTAL_G=DNAMES.reduce((a,d)=>a+DISC[d].total,0);
 
-const DISC_NAMES = Object.keys(DISCIPLINAS);
-const TOTAL_GERAL = DISC_NAMES.reduce((a,d)=>a+DISCIPLINAS[d].total,0);
+window._d={sessoes:[],revisoes:[],erros:[],subTotais:{}};
 
-// ── DADOS LOCAIS (espelho do Firestore) ───────────────────────────────────────
-window._dados = { sessoes:[], revisoes:[], erros:[], subTotais:{} };
+function hoje(){return new Date().toISOString().slice(0,10);}
+function fmtD(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
+function diasAte(iso){return Math.round((new Date(iso)-new Date(hoje()))/86400000);}
+function sk(disc,sub){return(disc+'||'+sub).replace(/[^a-zA-Z0-9||]/g,'_');}
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-function hoje(){ return new Date().toISOString().slice(0,10); }
-function fmtDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
-function diasAte(iso){ return Math.round((new Date(iso)-new Date(hoje()))/86400000); }
-function subKey(disc,sub){ return (disc+'||'+sub).replace(/[^a-zA-Z0-9||]/g,'_'); }
-
-function showToast(msg, tipo='ok'){
+function showToast(msg,tipo='ok'){
   const t=document.getElementById('toast');
   t.textContent=msg;
   t.style.background=tipo==='err'?'var(--danger)':'var(--success)';
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+  setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-async function salvar(){
-  await window._salvarNuvem();
-}
-
-// ── SELECTS ───────────────────────────────────────────────────────────────────
-function popularSelects(){
+function popularTodosSelects(){
   ['f-disc','e-disc'].forEach(id=>{
     const sel=document.getElementById(id);
-    if(!sel) return;
+    if(!sel)return;
     sel.innerHTML='<option value="">Selecione...</option>';
-    DISC_NAMES.forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
+    DNAMES.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
   });
+  document.getElementById('f-data').value=hoje();
+  document.getElementById('e-data').value=hoje();
 }
 
-window.popularSubtopicos = function(){
-  const disc=document.getElementById('f-disc').value;
-  const sel=document.getElementById('f-sub');
+window.popularSubs=function(targetId,sourceId){
+  const disc=document.getElementById(sourceId).value;
+  const sel=document.getElementById(targetId);
   sel.innerHTML='<option value="">Selecione o subtópico</option>';
-  if(disc&&DISCIPLINAS[disc]) DISCIPLINAS[disc].subs.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+  if(disc&&DISC[disc])DISC[disc].subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
 };
 
-window.popularSubtopicoErro = function(){
-  const disc=document.getElementById('e-disc').value;
-  const sel=document.getElementById('e-sub');
-  sel.innerHTML='<option value="">Selecione o subtópico</option>';
-  if(disc&&DISCIPLINAS[disc]) DISCIPLINAS[disc].subs.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+window.previewFoto=function(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=document.getElementById('e-foto-preview');
+    img.src=e.target.result;img.style.display='block';
+  };
+  reader.readAsDataURL(file);
 };
 
-// ── REGISTRAR SESSÃO ──────────────────────────────────────────────────────────
-window.registrarSessao = async function(){
+window.registrarSessao=async function(){
+  const data=document.getElementById('f-data').value||hoje();
   const disc=document.getElementById('f-disc').value;
   const sub=document.getElementById('f-sub').value;
   const aulas=parseInt(document.getElementById('f-aulas').value)||0;
@@ -547,114 +388,112 @@ window.registrarSessao = async function(){
   const q=parseInt(document.getElementById('f-q').value)||0;
   const ac=parseInt(document.getElementById('f-ac').value)||0;
   const obs=document.getElementById('f-obs').value.trim();
-
-  if(!disc){ showToast('Selecione uma disciplina','err'); return; }
-  if(!sub){ showToast('Selecione o subtópico','err'); return; }
-  if(aulas===0&&q===0){ showToast('Informe aulas ou questões','err'); return; }
-  if(ac>q){ showToast('Acertos > questões','err'); return; }
-
-  if(aulasTotal>0){ window._dados.subTotais[subKey(disc,sub)]=aulasTotal; }
-
-  window._dados.sessoes.unshift({id:Date.now(), data:hoje(), disc, sub, aulas, q, ac, obs});
-
-  if(aulas>0) agendarRevisoes(disc, sub, hoje());
-
+  if(!disc){showToast('Selecione a disciplina','err');return;}
+  if(!sub){showToast('Selecione o subtópico','err');return;}
+  if(aulas===0&&q===0){showToast('Informe aulas ou questões','err');return;}
+  if(ac>q){showToast('Acertos > questões','err');return;}
+  if(aulasTotal>0)window._d.subTotais[sk(disc,sub)]=aulasTotal;
+  window._d.sessoes.unshift({id:Date.now(),data,disc,sub,aulas,q,ac,obs});
+  if(aulas>0)agendarRevisoes(disc,sub,data);
   ['f-disc','f-sub'].forEach(id=>document.getElementById(id).value='');
   ['f-aulas','f-aulastotal','f-q','f-ac','f-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-data').value=hoje();
   document.getElementById('f-sub').innerHTML='<option value="">Selecione a disciplina primeiro</option>';
-
-  await salvar();
-  showToast('✅ Sessão registrada!');
-  render();
+  await window._salvar();showToast('✅ Sessão registrada!');render();
 };
 
-// ── REVISÕES ──────────────────────────────────────────────────────────────────
-function agendarRevisoes(disc, sub, dataBase){
-  const offsets=[7,30,90];
-  const labels=['R1 +7 dias','R2 +30 dias','R3 +90 dias'];
-  offsets.forEach((off,i)=>{
-    const d=new Date(dataBase); d.setDate(d.getDate()+off);
+function agendarRevisoes(disc,sub,dataBase){
+  [[7,'R1 +7 dias'],[30,'R2 +30 dias'],[90,'R3 +90 dias']].forEach(([off,lbl])=>{
+    const d=new Date(dataBase);d.setDate(d.getDate()+off);
     const dataRev=d.toISOString().slice(0,10);
-    const existe=window._dados.revisoes.find(r=>r.disc===disc&&r.sub===sub&&r.label===labels[i]);
-    if(!existe) window._dados.revisoes.push({id:Date.now()+i, disc, sub, label:labels[i], data:dataRev, feita:false});
+    if(!window._d.revisoes.find(r=>r.disc===disc&&r.sub===sub&&r.label===lbl))
+      window._d.revisoes.push({id:Date.now()+off,disc,sub,label:lbl,data:dataRev,feita:false});
   });
 }
 
-window.marcarRevisao = async function(id){
-  const r=window._dados.revisoes.find(r=>r.id===id);
-  if(r){ r.feita=true; await salvar(); render(); showToast('✅ Revisão concluída!'); }
+window.marcarRevisao=async function(id){
+  const r=window._d.revisoes.find(r=>r.id===id);
+  if(r){r.feita=true;await window._salvar();render();showToast('✅ Revisão concluída!');}
 };
 
-// ── CADERNO DE ERROS ──────────────────────────────────────────────────────────
-window.registrarErro = async function(){
+window.gerarICS=function(id){
+  const r=window._d.revisoes.find(r=>r.id===id);if(!r)return;
+  const dtStr=r.data.replace(/-/g,'');
+  const d=new Date(r.data);d.setDate(d.getDate()+1);
+  const dtEnd=d.toISOString().slice(0,10).replace(/-/g,'');
+  const ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TRT9//PT\r\nBEGIN:VEVENT\r\nUID:trt9-'+id+'@estudos\r\nSUMMARY:📚 '+r.label+' — '+r.disc+'\r\nDESCRIPTION:Subtópico: '+r.sub+'\\nRevisão = 30 questões + erros.\r\nDTSTART;VALUE=DATE:'+dtStr+'\r\nDTEND;VALUE=DATE:'+dtEnd+'\r\nBEGIN:VALARM\r\nTRIGGER:-PT8H\r\nACTION:DISPLAY\r\nDESCRIPTION:Revisar: '+r.disc+'\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR';
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='revisao_'+r.disc.replace(/\s/g,'_')+'_'+r.data+'.ics';a.click();
+  URL.revokeObjectURL(url);
+  showToast('📅 Baixado — abra para adicionar ao Calendário');
+};
+
+window.gerarICSLote=function(){
+  const p=window._d.revisoes.filter(r=>!r.feita);
+  if(p.length===0){showToast('Nenhuma revisão pendente','err');return;}
+  const evs=p.map(r=>{
+    const dtStr=r.data.replace(/-/g,'');
+    const d=new Date(r.data);d.setDate(d.getDate()+1);
+    const dtEnd=d.toISOString().slice(0,10).replace(/-/g,'');
+    return 'BEGIN:VEVENT\r\nUID:trt9-'+r.id+'@estudos\r\nSUMMARY:📚 '+r.label+' — '+r.disc+'\r\nDESCRIPTION:'+r.sub+'\r\nDTSTART;VALUE=DATE:'+dtStr+'\r\nDTEND;VALUE=DATE:'+dtEnd+'\r\nBEGIN:VALARM\r\nTRIGGER:-PT8H\r\nACTION:DISPLAY\r\nDESCRIPTION:Revisar: '+r.disc+'\r\nEND:VALARM\r\nEND:VEVENT';
+  }).join('\r\n');
+  const ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TRT9//PT\r\n'+evs+'\r\nEND:VCALENDAR';
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='todas_revisoes_trt9.ics';a.click();
+  URL.revokeObjectURL(url);
+  showToast('📅 '+p.length+' eventos baixados!');
+};
+
+window.registrarErro=async function(){
+  const data=document.getElementById('e-data').value||hoje();
   const disc=document.getElementById('e-disc').value;
   const sub=document.getElementById('e-sub').value;
   const tema=document.getElementById('e-tema').value.trim();
-  const desc=document.getElementById('e-desc').value.trim();
-
-  if(!disc||!sub){ showToast('Selecione disciplina e subtópico','err'); return; }
-  if(!tema){ showToast('Descreva o tema do erro','err'); return; }
-
-  window._dados.erros.unshift({id:Date.now(), data:hoje(), disc, sub, tema, desc, revisado:false});
+  if(!disc||!sub){showToast('Selecione disciplina e subtópico','err');return;}
+  if(!tema){showToast('Descreva o tema do erro','err');return;}
+  const erro={id:Date.now(),data,disc,sub,tema,revisado:false,fotoBase64:null};
+  const preview=document.getElementById('e-foto-preview').src;
+  if(preview&&preview.startsWith('data:'))erro.fotoBase64=preview;
+  window._d.erros.unshift(erro);
   ['e-disc','e-sub'].forEach(id=>document.getElementById(id).value='');
-  ['e-tema','e-desc'].forEach(id=>document.getElementById(id).value='');
+  ['e-tema'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('e-data').value=hoje();
   document.getElementById('e-sub').innerHTML='<option value="">Selecione a disciplina</option>';
-
-  await salvar();
-  showToast('🚨 Erro registrado!');
-  render();
+  document.getElementById('e-foto').value='';
+  document.getElementById('e-foto-preview').style.display='none';
+  document.getElementById('e-foto-preview').src='';
+  await window._salvar();showToast('🚨 Erro registrado!');render();
 };
 
-window.marcarErroRevisado = async function(id){
-  const e=window._dados.erros.find(e=>e.id===id);
-  if(e){ e.revisado=true; e.dataRevisao=hoje(); await salvar(); render(); showToast('✅ Erro revisado!'); }
+window.marcarErroRevisado=async function(id){
+  const e=window._d.erros.find(e=>e.id===id);
+  if(e){e.revisado=true;e.dataRevisao=hoje();await window._salvar();render();showToast('✅ Revisado!');}
 };
+window.deletarErro=async function(id){window._d.erros=window._d.erros.filter(e=>e.id!==id);await window._salvar();render();showToast('Removido');};
+window.deletarSessao=async function(id){window._d.sessoes=window._d.sessoes.filter(s=>s.id!==id);await window._salvar();render();showToast('Removido');};
 
-window.deletarErro = async function(id){
-  window._dados.erros=window._dados.erros.filter(e=>e.id!==id);
-  await salvar(); render(); showToast('Erro removido');
+window.exportarJSON=function(){
+  const blob=new Blob([JSON.stringify({versao:4,exportadoEm:new Date().toISOString(),...window._d},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='trt9_dados_'+hoje()+'.json';a.click();URL.revokeObjectURL(url);showToast('✅ Exportado!');
 };
-
-window.deletarSessao = async function(id){
-  window._dados.sessoes=window._dados.sessoes.filter(s=>s.id!==id);
-  await salvar(); render(); showToast('Sessão removida');
-};
-
-// ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
-window.exportarJSON = function(){
-  const blob=new Blob([JSON.stringify({versao:3, exportadoEm:new Date().toISOString(), ...window._dados},null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='trt9_dados_'+hoje()+'.json'; a.click();
-  URL.revokeObjectURL(url);
-  showToast('✅ Dados exportados!');
-};
-
-window.importarJSON = async function(event){
-  const file=event.target.files[0]; if(!file) return;
+window.importarJSON=async function(evt){
+  const file=evt.target.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=async function(e){
-    try{
-      const d=JSON.parse(e.target.result);
-      if(!d.sessoes) throw new Error('Formato inválido');
-      window._dados.sessoes=d.sessoes||[];
-      window._dados.revisoes=d.revisoes||[];
-      window._dados.erros=d.erros||[];
-      window._dados.subTotais=d.subTotais||{};
-      await salvar(); render(); showToast('✅ Dados importados!');
-    }catch(err){ showToast('❌ Arquivo inválido','err'); }
+    try{const d=JSON.parse(e.target.result);if(!d.sessoes)throw new Error();
+      window._d.sessoes=d.sessoes||[];window._d.revisoes=d.revisoes||[];window._d.erros=d.erros||[];window._d.subTotais=d.subTotais||{};
+      await window._salvar();render();showToast('✅ Importado!');
+    }catch{showToast('❌ Arquivo inválido','err');}
   };
-  reader.readAsText(file);
-  event.target.value='';
+  reader.readAsText(file);evt.target.value='';
 };
 
-// ── RENDER ────────────────────────────────────────────────────────────────────
-function render(){
-  renderStats(); renderDash(); renderProgresso();
-  renderRevisoes(); renderErros(errosFiltro); renderHistorico(histFiltro);
-}
+function render(){renderStats();renderDash();renderProgresso();renderRevisoes();renderErros(erroFiltro);renderHistorico(histFiltro);}
 
 function renderStats(){
-  const d=window._dados;
+  const d=window._d;
   const tA=d.sessoes.reduce((a,s)=>a+s.aulas,0);
   const tQ=d.sessoes.reduce((a,s)=>a+s.q,0);
   const tAc=d.sessoes.reduce((a,s)=>a+s.ac,0);
@@ -663,169 +502,115 @@ function renderStats(){
   document.getElementById('s-questoes').textContent=tQ;
   document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
   document.getElementById('s-dias').textContent=dias;
-  document.getElementById('s-horas').textContent=Math.round(tA*0.5)+'h';
-  document.getElementById('s-prog').textContent=Math.round(tA/TOTAL_GERAL*100)+'%';
+  document.getElementById('s-horas').textContent=Math.round(tA*.5)+'h';
+  document.getElementById('s-prog').textContent=Math.round(tA/TOTAL_G*100)+'%';
 }
 
 function renderDash(){
-  const d=window._dados;
-  const revUrg=d.revisoes.filter(r=>!r.feita&&diasAte(r.data)<=0).slice(0,4);
-  document.getElementById('dash-rev').innerHTML=revUrg.length===0
-    ?'<div class="empty">Sem revisões urgentes 🎉</div>'
-    :revUrg.map(r=>`<div class="rev-item urgente" style="margin-bottom:6px">
-        <div><div style="font-size:.75rem;font-weight:500">${r.disc}</div>
-        <div style="font-size:.63rem;color:var(--muted)">${r.sub} · ${r.label}</div></div>
-        <button class="btn btn-sm btn-ghost" onclick="marcarRevisao(${r.id})">✓</button></div>`).join('');
-
-  const errPend=d.erros.filter(e=>!e.revisado).slice(0,4);
-  document.getElementById('dash-erros').innerHTML=errPend.length===0
-    ?'<div class="empty">Sem erros pendentes 🎉</div>'
-    :errPend.map(e=>`<div style="background:var(--bg);border:1px solid #5a1f1f;border-radius:6px;padding:9px 12px;margin-bottom:6px">
-        <div style="font-size:.72rem;font-weight:500;color:var(--danger)">${e.disc}</div>
-        <div style="font-size:.67rem;color:var(--muted)">${e.sub}</div>
-        <div style="font-size:.72rem;margin-top:3px">${e.tema}</div></div>`).join('');
-
-  document.getElementById('dash-disc').innerHTML=DISC_NAMES.map(nome=>{
-    const disc=DISCIPLINAS[nome];
-    const feitas=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
-    const pct=Math.min(100,Math.round(feitas/disc.total*100));
+  const d=window._d;
+  const ru=d.revisoes.filter(r=>!r.feita&&diasAte(r.data)<=0).slice(0,4);
+  document.getElementById('dash-rev').innerHTML=ru.length===0?'<div class="empty">Sem revisões urgentes 🎉</div>'
+    :ru.map(r=>'<div class="rev-item urgente" style="margin-bottom:5px"><div><div style="font-size:.74rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted)">'+r.sub+' · '+r.label+'</div></div><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div>').join('');
+  const ep=d.erros.filter(e=>!e.revisado).slice(0,4);
+  document.getElementById('dash-erros').innerHTML=ep.length===0?'<div class="empty">Sem erros pendentes 🎉</div>'
+    :ep.map(e=>'<div style="background:var(--bg);border:1px solid #5a1f1f;border-radius:6px;padding:8px 11px;margin-bottom:5px"><div style="font-size:.72rem;font-weight:500;color:var(--danger)">'+e.disc+'</div><div style="font-size:.66rem;color:var(--muted)">'+e.sub+'</div><div style="font-size:.72rem;margin-top:3px">'+e.tema+'</div></div>').join('');
+  document.getElementById('dash-disc').innerHTML=DNAMES.map(nome=>{
+    const disc=DISC[nome];
+    const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
+    const pct=Math.min(100,Math.round(f/disc.total*100));
     const bc=disc.prior==='MÁXIMA'?'b-max':disc.prior==='ALTA'?'b-alta':'b-man';
-    return `<div style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;font-size:.73rem;margin-bottom:3px">
-        <span>${nome}<span class="badge ${bc}">${disc.prior}</span></span>
-        <span style="color:var(--muted)">${feitas}/${disc.total}</span></div>
-      <div class="bar"><div class="bar-fill" style="width:${pct}%;background:${disc.cor}"></div></div></div>`;
+    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:.71rem;margin-bottom:3px"><span>'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></span><span style="color:var(--muted)">'+f+'/'+disc.total+'</span></div><div class="bar"><div class="bar-fill" style="width:'+pct+'%;background:'+disc.cor+'"></div></div></div>';
   }).join('');
 }
 
-window.toggleSub = function(id){ document.getElementById(id).classList.toggle('open'); };
+window.toggleSub=function(id){document.getElementById(id).classList.toggle('open');};
 
 function renderProgresso(){
-  const d=window._dados;
-  document.getElementById('prog-list').innerHTML=DISC_NAMES.map(nome=>{
-    const disc=DISCIPLINAS[nome];
-    const feitas=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
-    const pct=Math.min(100,Math.round(feitas/disc.total*100));
+  const d=window._d;
+  document.getElementById('prog-list').innerHTML=DNAMES.map(nome=>{
+    const disc=DISC[nome];
+    const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
+    const pct=Math.min(100,Math.round(f/disc.total*100));
     const qT=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.q,0);
     const acT=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.ac,0);
-    const acPct=qT>0?Math.round(acT/qT*100)+'%':'—';
+    const acP=qT>0?Math.round(acT/qT*100)+'%':'—';
     const bc=disc.prior==='MÁXIMA'?'b-max':disc.prior==='ALTA'?'b-alta':'b-man';
     const domId='sub_'+nome.replace(/[\s.]/g,'_');
-
-    const subsHtml=disc.subs.map(sub=>{
-      const k=subKey(nome,sub);
-      const totalSub=d.subTotais[k]||0;
+    const subs=disc.subs.map(sub=>{
+      const k=sk(nome,sub);const tS=d.subTotais[k]||0;
       const fS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
-      const pS=totalSub>0?Math.min(100,Math.round(fS/totalSub*100)):0;
+      const pS=tS>0?Math.min(100,Math.round(fS/tS*100)):0;
       const qS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.q,0);
       const aS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
-      const aPct=qS>0?Math.round(aS/qS*100)+'%':'—';
-      const corAc=qS>0?(aS/qS>=.7?'var(--success)':aS/qS>=.5?'var(--accent)':'var(--danger)'):'var(--muted)';
-      return `<div class="sub-item">
-        <div class="sub-name">${sub}</div>
-        <div class="sub-bar-wrap"><div class="sub-bar"><div class="sub-bar-fill" style="width:${pS}%;background:${disc.cor}"></div></div></div>
-        <div style="font-size:.65rem;color:var(--muted);min-width:50px;text-align:right">${fS}${totalSub>0?'/'+totalSub:''} aul</div>
-        <div style="font-size:.65rem;color:${corAc};min-width:30px;text-align:right">${aPct}</div></div>`;
+      const aP=qS>0?Math.round(aS/qS*100)+'%':'—';
+      const corA=qS>0?(aS/qS>=.7?'var(--success)':aS/qS>=.5?'var(--accent)':'var(--danger)'):'var(--muted)';
+      return '<div class="sub-item"><div class="sub-name">'+sub+'</div><div class="sub-bw"><div class="sub-bar"><div class="sub-bar-fill" style="width:'+pS+'%;background:'+disc.cor+'"></div></div></div><div style="font-size:.63rem;color:var(--muted);min-width:48px;text-align:right">'+fS+(tS>0?'/'+tS:'')+'</div><div style="font-size:.63rem;color:'+corA+';min-width:28px;text-align:right">'+aP+'</div></div>';
     }).join('');
-
-    return `<div class="disc-item" onclick="toggleSub('${domId}')">
-      <div class="disc-header">
-        <div class="disc-name">${nome}<span class="badge ${bc}">${disc.prior}</span></div>
-        <div class="disc-stats">${feitas}/${disc.total} · ${acPct} · ${pct}%</div></div>
-      <div class="bar"><div class="bar-fill" style="width:${pct}%;background:${disc.cor}"></div></div>
-      <div class="sub-list" id="${domId}">${subsHtml}</div></div>`;
+    return '<div class="disc-item" onclick="toggleSub(\''+domId+'\')"><div class="disc-header"><div class="disc-name">'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></div><div class="disc-stats">'+f+'/'+disc.total+' · '+acP+' · '+pct+'%</div></div><div class="bar"><div class="bar-fill" style="width:'+pct+'%;background:'+disc.cor+'"></div></div><div class="sub-list" id="'+domId+'">'+subs+'</div></div>';
   }).join('');
 }
 
 function renderRevisoes(){
-  const pendentes=window._dados.revisoes.filter(r=>!r.feita).sort((a,b)=>a.data.localeCompare(b.data));
-  if(pendentes.length===0){ document.getElementById('rev-list').innerHTML='<div class="empty">Nenhuma revisão pendente 🎉</div>'; return; }
-  document.getElementById('rev-list').innerHTML=pendentes.slice(0,30).map(r=>{
-    const diff=diasAte(r.data);
-    let tc,tt,ic='';
-    if(diff<0){tc='t-urgente';tt=`${Math.abs(diff)}d atrasada`;ic='urgente';}
+  const p=window._d.revisoes.filter(r=>!r.feita).sort((a,b)=>a.data.localeCompare(b.data));
+  const container=document.getElementById('rev-list');
+  if(p.length===0){container.innerHTML='<div class="empty">Nenhuma revisão pendente 🎉</div>';return;}
+  const btnLote='<button class="btn btn-ghost" onclick="gerarICSLote()" style="margin-bottom:10px;font-size:.72rem">📅 Baixar todas as revisões para o Calendário (.ics)</button>';
+  container.innerHTML=btnLote+p.slice(0,30).map(r=>{
+    const diff=diasAte(r.data);let tc,tt,ic='';
+    if(diff<0){tc='t-urgente';tt=Math.abs(diff)+'d atrasada';ic='urgente';}
     else if(diff===0){tc='t-hoje';tt='Hoje!';ic='hoje';}
-    else{tc='t-proxima';tt=`em ${diff}d`;}
-    return `<div class="rev-item ${ic}">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.78rem;font-weight:500">${r.disc}</div>
-        <div style="font-size:.65rem;color:var(--muted);margin-top:1px">${r.sub} · ${r.label} · ${fmtDate(r.data)}</div></div>
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <span class="rev-tag ${tc}">${tt}</span>
-        <button class="btn btn-sm btn-ghost" onclick="marcarRevisao(${r.id})">✓</button></div></div>`;
+    else{tc='t-proxima';tt='em '+diff+'d';}
+    return '<div class="rev-item '+ic+'"><div style="flex:1;min-width:0"><div style="font-size:.76rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted);margin-top:1px">'+r.sub+' · '+r.label+' · '+fmtD(r.data)+'</div></div><div class="rev-actions"><span class="rev-tag '+tc+'">'+tt+'</span><button class="btn-ics" onclick="gerarICS('+r.id+')">📅</button><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div></div>';
   }).join('');
 }
 
-let errosFiltro='todos';
+let erroFiltro='todos';
 function renderErrosFiltros(){
-  const opts=['todos','pendentes','revisados',...DISC_NAMES];
-  document.getElementById('erros-filtros').innerHTML=opts.map(o=>`
-    <button class="filtro-btn${errosFiltro===o?' active':''}" onclick="setErroFiltro('${o}')">
-      ${o==='todos'?'Todos':o==='pendentes'?'Pendentes':o==='revisados'?'Revisados':o.split(' ')[1]||o}</button>`).join('');
+  const opts=['todos','pendentes','revisados',...DNAMES];
+  document.getElementById('erros-filtros').innerHTML=opts.map(o=>'<button class="filtro-btn'+(erroFiltro===o?' active':'')+'" onclick="setErroF(\''+o+'\')">'+( o==='todos'?'Todos':o==='pendentes'?'Pendentes':o==='revisados'?'Revisados':o.split(' ').slice(-1)[0])+'</button>').join('');
 }
-window.setErroFiltro=function(f){ errosFiltro=f; renderErros(f); };
+window.setErroF=function(f){erroFiltro=f;renderErros(f);};
 
 function renderErros(filtro){
   renderErrosFiltros();
-  let lista=[...window._dados.erros];
-  if(filtro==='pendentes') lista=lista.filter(e=>!e.revisado);
-  else if(filtro==='revisados') lista=lista.filter(e=>e.revisado);
-  else if(filtro!=='todos') lista=lista.filter(e=>e.disc===filtro);
-  if(lista.length===0){ document.getElementById('erros-list').innerHTML='<div class="empty">Nenhum erro nesta categoria.</div>'; return; }
-  document.getElementById('erros-list').innerHTML=lista.map(e=>`
-    <div class="erro-item">
-      <div class="erro-header">
-        <div><div class="erro-disc">${e.disc}</div><div class="erro-sub">${e.sub} · ${fmtDate(e.data)}</div></div>
-        <span class="erro-status ${e.revisado?'status-revisado':'status-pendente'}">${e.revisado?'Revisado':'Pendente'}</span></div>
-      <div class="erro-tema">📌 ${e.tema}</div>
-      ${e.desc?`<div class="erro-desc">${e.desc}</div>`:''}
-      ${e.revisado&&e.dataRevisao?`<div style="font-size:.68rem;color:var(--success);margin-bottom:6px">✓ Revisado em ${fmtDate(e.dataRevisao)}</div>`:''}
-      <div class="erro-actions">
-        ${!e.revisado?`<button class="btn btn-sm btn-ghost" onclick="marcarErroRevisado(${e.id})">✓ Revisado</button>`:''}
-        <button class="btn btn-sm btn-danger" onclick="deletarErro(${e.id})">Remover</button></div></div>`).join('');
+  let lista=[...window._d.erros];
+  if(filtro==='pendentes')lista=lista.filter(e=>!e.revisado);
+  else if(filtro==='revisados')lista=lista.filter(e=>e.revisado);
+  else if(filtro!=='todos')lista=lista.filter(e=>e.disc===filtro);
+  if(lista.length===0){document.getElementById('erros-list').innerHTML='<div class="empty">Nenhum erro nesta categoria.</div>';return;}
+  document.getElementById('erros-list').innerHTML=lista.map(e=>{
+    const fotoHtml=e.fotoBase64?'<img src="'+e.fotoBase64+'" onclick="this.style.maxWidth=this.style.maxWidth===\'80px\'?\'100%\':\'80px\'" style="max-width:80px;cursor:pointer;border-radius:6px;margin-top:6px;border:1px solid var(--border)" title="Toque para ampliar">':'';
+    return '<div class="erro-item"><div class="erro-header"><div><div class="erro-disc">'+e.disc+'</div><div class="erro-sub">'+e.sub+' · '+fmtD(e.data)+'</div></div><span class="erro-status '+(e.revisado?'status-revisado':'status-pendente')+'">'+(e.revisado?'Revisado':'Pendente')+'</span></div><div class="erro-tema">📌 '+e.tema+'</div>'+fotoHtml+(e.revisado&&e.dataRevisao?'<div style="font-size:.67rem;color:var(--success);margin-top:4px">✓ Revisado em '+fmtD(e.dataRevisao)+'</div>':'')+'<div class="erro-actions">'+(!e.revisado?'<button class="btn btn-sm btn-ghost" onclick="marcarErroRevisado('+e.id+')">✓ Revisado</button>':'')+'<button class="btn btn-sm btn-danger" onclick="deletarErro('+e.id+')">Remover</button></div></div>';
+  }).join('');
 }
 
 let histFiltro='todos';
 function renderHistFiltros(){
-  const opts=['todos',...DISC_NAMES];
-  document.getElementById('hist-filtros').innerHTML=opts.map(o=>`
-    <button class="filtro-btn${histFiltro===o?' active':''}" onclick="setHistFiltro('${o}')">
-      ${o==='todos'?'Todas':o.split(' ')[1]||o}</button>`).join('');
+  const opts=['todos',...DNAMES];
+  document.getElementById('hist-filtros').innerHTML=opts.map(o=>'<button class="filtro-btn'+(histFiltro===o?' active':'')+'" onclick="setHistF(\''+o+'\')">'+( o==='todos'?'Todas':o.split(' ').slice(-1)[0])+'</button>').join('');
 }
-window.setHistFiltro=function(f){ histFiltro=f; renderHistorico(f); };
+window.setHistF=function(f){histFiltro=f;renderHistorico(f);};
 
 function renderHistorico(filtro){
   renderHistFiltros();
-  let lista=filtro==='todos'?window._dados.sessoes:window._dados.sessoes.filter(s=>s.disc===filtro);
-  if(lista.length===0){ document.getElementById('hist-list').innerHTML='<div class="empty">Nenhuma sessão ainda.</div>'; return; }
+  let lista=filtro==='todos'?window._d.sessoes:window._d.sessoes.filter(s=>s.disc===filtro);
+  if(lista.length===0){document.getElementById('hist-list').innerHTML='<div class="empty">Nenhuma sessão ainda.</div>';return;}
   document.getElementById('hist-list').innerHTML=lista.slice(0,60).map(s=>{
     const pct=s.q>0?Math.round(s.ac/s.q*100):null;
     const cls=pct===null?'':pct>=70?'acerto-bom':pct>=50?'acerto-ok':'acerto-ruim';
-    return `<div class="hist-item">
-      <div class="hist-top"><span class="hist-disc">${s.disc}</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="hist-date">${fmtDate(s.data)}</span>
-          <button class="btn btn-sm btn-danger" onclick="deletarSessao(${s.id})">✕</button></div></div>
-      <div class="hist-sub">${s.sub}</div>
-      <div class="hist-nums">
-        <span>${s.aulas} aulas</span><span>${s.q} questões</span>
-        ${pct!==null?`<span class="${cls}">${pct}% (${s.ac}/${s.q})</span>`:''}
-        ${s.obs?`<span style="color:var(--muted)">📝 ${s.obs}</span>`:''}</div></div>`;
+    return '<div class="hist-item"><div class="hist-top"><span class="hist-disc">'+s.disc+'</span><div style="display:flex;align-items:center;gap:6px"><span class="hist-date">'+fmtD(s.data)+'</span><button class="btn btn-sm btn-danger" onclick="deletarSessao('+s.id+')">✕</button></div></div><div class="hist-sub">'+s.sub+'</div><div class="hist-nums"><span>'+s.aulas+'aul</span><span>'+s.q+'q</span>'+(pct!==null?'<span class="'+cls+'">'+pct+'% ('+s.ac+'/'+s.q+')</span>':'')+(s.obs?'<span style="color:var(--muted)">📝 '+s.obs+'</span>':'')+'</div></div>';
   }).join('');
 }
 
-// ── NAV ───────────────────────────────────────────────────────────────────────
-window.showPage = function(id, btn){
+window.showPage=function(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-nav').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  if(btn) btn.classList.add('active');
-  else document.querySelectorAll('.tab-nav')[['dashboard','sessao','progresso','revisoes','erros','historico'].indexOf(id)]?.classList.add('active');
+  if(btn)btn.classList.add('active');
   render();
 };
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-popularSelects();
+popularTodosSelects();
 </script>
 </body>
 </html>
