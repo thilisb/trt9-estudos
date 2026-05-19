@@ -221,7 +221,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -260,28 +260,20 @@ function mostrarLogin(){
   if(unsubscribe){ unsubscribe(); unsubscribe=null; }
 }
 
-// Flag para evitar loop durante o redirect do Google
-let aguardandoRedirect = sessionStorage.getItem('aguardandoRedirect') === 'true';
-
-getRedirectResult(auth).then(result => {
-  sessionStorage.removeItem('aguardandoRedirect');
-  aguardandoRedirect = false;
-  if(result && result.user){ mostrarApp(result.user); }
-}).catch(e => {
-  sessionStorage.removeItem('aguardandoRedirect');
-  aguardandoRedirect = false;
-});
-
 onAuthStateChanged(auth, user => {
-  if(aguardandoRedirect) return;
   if(user){ mostrarApp(user); }
   else { mostrarLogin(); }
 });
 
 window.loginGoogle = async function(){
-  sessionStorage.setItem('aguardandoRedirect', 'true');
-  const provider = new GoogleAuthProvider();
-  await signInWithRedirect(auth, provider);
+  try{
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  }catch(e){
+    if(e.code !== 'auth/popup-closed-by-user'){
+      alert('Erro ao fazer login: ' + e.message);
+    }
+  }
 };
 
 window.logout=async function(){
