@@ -326,6 +326,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <div id="dash-erros"></div>
     </div>
   </div>
+  <!-- Meta semanal -->
+  <div class="card">
+    <div class="card-title">🎯 Meta Semanal de Horas</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div class="field" style="margin:0;flex:1">
+        <label>Meta (horas/semana)</label>
+        <input type="number" id="meta-semanal-input" min="1" max="80" value="30" step="0.5" style="text-align:center">
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="atualizarMeta()" style="margin-top:18px;white-space:nowrap">Salvar meta</button>
+    </div>
+    <div id="meta-semanal-display"></div>
+    <div style="font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center">Horas contam aulas (0,5h/aula) + páginas (40 págs = 1h)</div>
+  </div>
   <!-- Progresso resumido -->
   <div class="card">
     <div class="card-title">📚 Progresso por disciplina</div>
@@ -342,6 +355,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <div class="field field-full"><label>Subtópico (edital)</label><select id="f-sub"><option value="">Selecione a disciplina primeiro</option></select></div>
       <div class="field"><label>Aulas assistidas</label><input type="number" id="f-aulas" min="0" max="30" placeholder="0"></div>
       <div class="field"><label>Total de aulas do subtópico no Gran</label><input type="number" id="f-aulastotal" min="0" placeholder="Informe o total"></div>
+      <div class="field"><label>Páginas lidas <span style="color:var(--muted);font-size:.55rem">(40 págs = 1h)</span></label><input type="number" id="f-paginas" min="0" placeholder="0"></div>
       <div class="field"><label>Questões feitas</label><input type="number" id="f-q" min="0" placeholder="0"></div>
       <div class="field"><label>Questões corretas</label><input type="number" id="f-ac" min="0" placeholder="0"></div>
       <div class="field field-full"><label>Observações / dúvidas</label><input type="text" id="f-obs" placeholder="Ex: dificuldade com prescrição intercorrente"></div>
@@ -513,6 +527,9 @@ function iniciarSync(uid){
       window._d.revisoes=d.revisoes||[];
       window._d.erros=d.erros||[];
       window._d.subTotais=d.subTotais||{};
+      window._d.metaSemanal=d.metaSemanal||30;
+      const mEl=document.getElementById('meta-semanal-input');
+      if(mEl)mEl.value=window._d.metaSemanal;
     }
     setSyncStatus('✓ Sincronizado',true);
     render();
@@ -597,18 +614,19 @@ window.registrarSessao=async function(){
   const sub=document.getElementById('f-sub').value;
   const aulas=parseInt(document.getElementById('f-aulas').value)||0;
   const aulasTotal=parseInt(document.getElementById('f-aulastotal').value)||0;
+  const paginas=parseInt(document.getElementById('f-paginas').value)||0;
   const q=parseInt(document.getElementById('f-q').value)||0;
   const ac=parseInt(document.getElementById('f-ac').value)||0;
   const obs=document.getElementById('f-obs').value.trim();
   if(!disc){showToast('Selecione a disciplina','err');return;}
   if(!sub){showToast('Selecione o subtópico','err');return;}
-  if(aulas===0&&q===0){showToast('Informe aulas ou questões','err');return;}
+  if(aulas===0&&q===0&&paginas===0){showToast('Informe aulas, páginas ou questões','err');return;}
   if(ac>q){showToast('Acertos > questões','err');return;}
   if(aulasTotal>0)window._d.subTotais[sk(disc,sub)]=aulasTotal;
-  window._d.sessoes.unshift({id:Date.now(),data,disc,sub,aulas,q,ac,obs});
+  window._d.sessoes.unshift({id:Date.now(),data,disc,sub,aulas,paginas,q,ac,obs});
   if(aulas>0)agendarRevisoes(disc,sub,data);
   ['f-disc','f-sub'].forEach(id=>document.getElementById(id).value='');
-  ['f-aulas','f-aulastotal','f-q','f-ac','f-obs'].forEach(id=>document.getElementById(id).value='');
+  ['f-aulas','f-aulastotal','f-paginas','f-q','f-ac','f-obs'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-data').value=hoje();
   document.getElementById('f-sub').innerHTML='<option value="">Selecione a disciplina primeiro</option>';
   await window._salvar();showToast('✅ Sessão registrada!');render();
@@ -707,18 +725,79 @@ function render(){renderStats();renderDash();renderProgresso();renderRevisoes();
 function renderStats(){
   const d=window._d;
   const tA=d.sessoes.reduce((a,s)=>a+s.aulas,0);
+  const tP=d.sessoes.reduce((a,s)=>a+(s.paginas||0),0);
   const tQ=d.sessoes.reduce((a,s)=>a+s.q,0);
   const tAc=d.sessoes.reduce((a,s)=>a+s.ac,0);
   const dias=[...new Set(d.sessoes.map(s=>s.data))].length;
+  // Horas: aulas × 0.5h + páginas ÷ 40h
+  const hTotal=tA*0.5 + tP/40;
   document.getElementById('s-aulas').textContent=tA;
   document.getElementById('s-questoes').textContent=tQ;
   document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
   document.getElementById('s-dias').textContent=dias;
-  document.getElementById('s-horas').textContent=Math.round(tA*.5)+'h';
+  document.getElementById('s-horas').textContent=hTotal.toFixed(1)+'h';
   document.getElementById('s-prog').textContent=Math.round(tA/TOTAL_G*100)+'%';
+  // Atualizar ring de progresso
+  const pct=Math.min(100,Math.round(tA/TOTAL_G*100));
+  const circ=2*Math.PI*75;
+  const fill=pct/100*circ;
+  const ring=document.getElementById('dash-ring-fill');
+  if(ring)ring.setAttribute('stroke-dasharray',fill+' '+circ);
+  // Semana atual
+  renderMetaSemanal(d,hTotal);
 }
 
-function renderDash(){
+function renderMetaSemanal(d, hTotalGeral){
+  const metaEl=document.getElementById('meta-semanal-input');
+  const meta=metaEl?parseFloat(metaEl.value)||30:30;
+  // Semana atual: segunda a domingo
+  const agora=new Date();
+  const diaSemana=agora.getDay()===0?6:agora.getDay()-1; // 0=seg
+  const seg=new Date(agora);seg.setDate(agora.getDate()-diaSemana);seg.setHours(0,0,0,0);
+  const dom=new Date(seg);dom.setDate(seg.getDate()+6);dom.setHours(23,59,59,999);
+  const semanaIso=[...Array(7)].map((_,i)=>{const dt=new Date(seg);dt.setDate(seg.getDate()+i);return dt.toISOString().slice(0,10);});
+  const sessoesSemana=d.sessoes.filter(s=>semanaIso.includes(s.data));
+  const hSemana=sessoesSemana.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40,0);
+  const pct=Math.min(100,hSemana/meta*100);
+  const faltam=Math.max(0,meta-hSemana);
+  const cor=pct>=100?'var(--success)':pct>=60?'var(--accent)':'var(--warn)';
+  const el=document.getElementById('meta-semanal-display');
+  if(el)el.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<div>' +
+        '<span style="font-family:var(--serif);font-size:1.7rem;font-weight:700;color:'+cor+'">'+hSemana.toFixed(1)+'h</span>' +
+        '<span style="font-size:.7rem;color:var(--muted)"> / '+meta+'h meta</span>' +
+      '</div>' +
+      '<div style="text-align:right;font-size:.65rem;color:var(--muted)">'+
+        (pct>=100?'<span style="color:var(--success);font-weight:600">✅ Meta atingida!</span>':'Faltam <strong style="color:'+cor+'">'+faltam.toFixed(1)+'h</strong>')+
+      '</div>' +
+    '</div>' +
+    '<div style="background:var(--border);border-radius:99px;height:8px;overflow:hidden;margin-bottom:10px">' +
+      '<div style="width:'+pct+'%;height:100%;background:'+cor+';border-radius:99px;transition:width .5s ease"></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:4px">' +
+      semanaIso.map((iso,i)=>{
+        const labels=['S','T','Q','Q','S','S','D'];
+        const h=sessoesSemana.filter(s=>s.data===iso).reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40,0);
+        const isHoje=iso===hoje();
+        const bc=h>0?(h>=4?'var(--success)':h>=2?'var(--accent)':'var(--surface3)'):'var(--border)';
+        const tc=h>0?'var(--text)':'var(--muted)';
+        return '<div style="flex:1;background:'+bc+';border:1px solid '+(isHoje?'var(--accent)':'transparent')+';border-radius:6px;padding:5px 2px;text-align:center">' +
+          '<div style="font-size:.5rem;color:var(--muted)">'+labels[i]+'</div>' +
+          '<div style="font-size:.6rem;color:'+tc+';font-weight:600;margin-top:2px">'+(h>0?h.toFixed(h<10?1:0)+'h':'·')+'</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+}
+
+window.atualizarMeta=async function(){
+  const metaEl=document.getElementById('meta-semanal-input');
+  const meta=parseFloat(metaEl.value)||30;
+  window._d.metaSemanal=meta;
+  await window._salvar();
+  renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40,0));
+  showToast('✅ Meta atualizada!');
+};
   const d=window._d;
   const ru=d.revisoes.filter(r=>!r.feita&&diasAte(r.data)<=0).slice(0,4);
   document.getElementById('dash-rev').innerHTML=ru.length===0?'<div class="empty">Sem revisões urgentes 🎉</div>'
@@ -811,7 +890,7 @@ function renderHistorico(filtro){
   document.getElementById('hist-list').innerHTML=lista.slice(0,60).map(s=>{
     const pct=s.q>0?Math.round(s.ac/s.q*100):null;
     const cls=pct===null?'':pct>=70?'acerto-bom':pct>=50?'acerto-ok':'acerto-ruim';
-    return '<div class="hist-item"><div class="hist-top"><span class="hist-disc">'+s.disc+'</span><div style="display:flex;align-items:center;gap:6px"><span class="hist-date">'+fmtD(s.data)+'</span><button class="btn btn-sm btn-danger" onclick="deletarSessao('+s.id+')">✕</button></div></div><div class="hist-sub">'+s.sub+'</div><div class="hist-nums"><span>'+s.aulas+'aul</span><span>'+s.q+'q</span>'+(pct!==null?'<span class="'+cls+'">'+pct+'% ('+s.ac+'/'+s.q+')</span>':'')+(s.obs?'<span style="color:var(--muted)">📝 '+s.obs+'</span>':'')+'</div></div>';
+    return '<div class="hist-item"><div class="hist-top"><span class="hist-disc">'+s.disc+'</span><div style="display:flex;align-items:center;gap:6px"><span class="hist-date">'+fmtD(s.data)+'</span><button class="btn btn-sm btn-danger" onclick="deletarSessao('+s.id+')">✕</button></div></div><div class="hist-sub">'+s.sub+'</div><div class="hist-nums"><span>'+s.aulas+'aul</span>'+(s.paginas?'<span>'+s.paginas+'págs</span>':'')+'<span>'+s.q+'q</span>'+(pct!==null?'<span class="'+cls+'">'+pct+'% ('+s.ac+'/'+s.q+')</span>':'')+(s.obs?'<span style="color:var(--muted)">📝 '+s.obs+'</span>':'')+'</div></div>';
   }).join('');
 }
 
@@ -953,7 +1032,7 @@ function notaFinal(acertoEsp, acertoGer) {
 // ── Probabilidade de convocação: sigmoide calibrada nos dados históricos ──
 // Âncoras: 165→5% | 220→35% | 240→55% | 265→80% | 300→95%
 function probConvocacao(nota) {
-  const mid = 255;
+  const mid = 238;
   const steep = 0.04;
   return 1 / (1 + Math.exp(-steep * (nota - mid)));
 }
