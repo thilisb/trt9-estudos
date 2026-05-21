@@ -953,7 +953,7 @@ function notaFinal(acertoEsp, acertoGer) {
 // ── Probabilidade de convocação: sigmoide calibrada nos dados históricos ──
 // Âncoras: 165→5% | 220→35% | 240→55% | 265→80% | 300→95%
 function probConvocacao(nota) {
-  const mid = 238;
+  const mid = 255;
   const steep = 0.04;
   return 1 / (1 + Math.exp(-steep * (nota - mid)));
 }
