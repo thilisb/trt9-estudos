@@ -798,6 +798,8 @@ window.atualizarMeta=async function(){
   renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40,0));
   showToast('✅ Meta atualizada!');
 };
+
+function renderDash(){
   const d=window._d;
   const ru=d.revisoes.filter(r=>!r.feita&&diasAte(r.data)<=0).slice(0,4);
   document.getElementById('dash-rev').innerHTML=ru.length===0?'<div class="empty">Sem revisões urgentes 🎉</div>'
