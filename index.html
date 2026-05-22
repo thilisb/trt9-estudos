@@ -175,17 +175,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 .acerto-ok{color:var(--accent);font-weight:600;}
 .acerto-ruim{color:var(--danger);font-weight:600;}
 
-/* ── Erros ── */
-.erro-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;transition:border-color .2s;}
-.erro-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
-.erro-disc{font-weight:600;font-size:.76rem;color:var(--danger);}
-.erro-sub{font-size:.65rem;color:var(--muted);margin-top:2px;}
-.erro-tema{font-size:.75rem;margin:6px 0;color:var(--text2);line-height:1.5;}
-.erro-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-.erro-status{display:inline-flex;align-items:center;font-size:.58rem;padding:3px 8px;border-radius:99px;font-weight:600;}
-.status-pendente{background:var(--danger-bg);color:var(--danger);}
-.status-revisado{background:var(--success-bg);color:var(--success);}
-
 /* ── Filtros ── */
 .filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
 .filtro-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:99px;color:var(--muted);font-family:var(--mono);font-size:.6rem;padding:4px 12px;cursor:pointer;transition:all .15s;}
@@ -288,7 +277,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 </nav>
 
 <div class="page active" id="page-dashboard">
-  <!-- Hero card com ring de progresso -->
   <div class="card" style="background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);">
     <div class="dash-hero">
       <div class="dash-ring-wrap">
@@ -314,19 +302,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       </div>
     </div>
   </div>
-  <!-- Heatmap + alertas -->
   <div class="s2col">
     <div class="card">
       <div class="card-title">🗓 Últimos 14 dias</div>
       <div id="dash-heatmap"></div>
     </div>
     <div class="card">
-      <div class="card-title">⚡ Alertas</div>
+      <div class="card-title">⚡ Alertas (Revisões)</div>
       <div id="dash-rev" style="margin-bottom:4px"></div>
-      <div id="dash-erros"></div>
     </div>
   </div>
-  <!-- Meta semanal -->
   <div class="card">
     <div class="card-title">🎯 Meta Semanal de Horas</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
@@ -337,9 +322,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <button class="btn btn-sm btn-ghost" onclick="atualizarMeta()" style="margin-top:18px;white-space:nowrap">Salvar meta</button>
     </div>
     <div id="meta-semanal-display"></div>
-    <div style="font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center">Horas contam aulas (0,5h/aula) + páginas (40 págs = 1h)</div>
+    <div style="font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center">Horas contam aulas (0,5h) + páginas (40/h) + questões (2 min/q)</div>
   </div>
-  <!-- Progresso resumido -->
   <div class="card">
     <div class="card-title">📚 Progresso por disciplina</div>
     <div id="dash-disc"></div>
@@ -354,8 +338,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <div class="field"><label>Disciplina</label><select id="f-disc" onchange="popularSubs('f-sub','f-disc')"><option value="">Selecione...</option></select></div>
       <div class="field field-full"><label>Subtópico (edital)</label><select id="f-sub"><option value="">Selecione a disciplina primeiro</option></select></div>
       <div class="field"><label>Aulas assistidas</label><input type="number" id="f-aulas" min="0" max="30" placeholder="0"></div>
-      <div class="field"><label>Total de aulas do subtópico no Gran</label><input type="number" id="f-aulastotal" min="0" placeholder="Informe o total"></div>
-      <div class="field"><label>Páginas lidas <span style="color:var(--muted);font-size:.55rem">(40 págs = 1h)</span></label><input type="number" id="f-paginas" min="0" placeholder="0"></div>
+      <div class="field"><label>Total de aulas do subtópico</label><input type="number" id="f-aulastotal" min="0" placeholder="Informe o total"></div>
+      <div class="field"><label>Páginas lidas <span style="color:var(--muted);font-size:.55rem">(40 págs = 1h | 1q = 2m)</span></label><input type="number" id="f-paginas" min="0" placeholder="0"></div>
       <div class="field"><label>Questões feitas</label><input type="number" id="f-q" min="0" placeholder="0"></div>
       <div class="field"><label>Questões corretas</label><input type="number" id="f-ac" min="0" placeholder="0"></div>
       <div class="field field-full"><label>Observações / dúvidas</label><input type="text" id="f-obs" placeholder="Ex: dificuldade com prescrição intercorrente"></div>
@@ -378,24 +362,30 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 
 <div class="page" id="page-erros">
   <div class="card">
-    <div class="card-title">🚨 Registrar Erro</div>
-    <div class="form-grid">
-      <div class="field"><label>Data do erro</label><input type="date" id="e-data"></div>
-      <div class="field"><label>Disciplina</label><select id="e-disc" onchange="popularSubs('e-sub','e-disc')"><option value="">Selecione...</option></select></div>
-      <div class="field field-full"><label>Subtópico</label><select id="e-sub"><option value="">Selecione a disciplina</option></select></div>
-      <div class="field field-full"><label>Tema do erro</label><input type="text" id="e-tema" placeholder="Ex: Diferença entre suspensão e interrupção do contrato"></div>
-      <div class="field field-full">
-        <label>Foto da questão (opcional)</label>
-        <input type="file" id="e-foto" accept="image/*" onchange="previewFoto(event)">
-        <img id="e-foto-preview" style="display:none;max-width:100%;margin-top:6px;border-radius:6px;border:1px solid var(--border)">
-      </div>
+    <div class="card-title">📚 Meus Cadernos de Erros (Google Drive)</div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:14px">
+      📁 Estudos para concurso / 📚 Cadernos de Erros
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <a href="https://docs.google.com/document/d/18E5GfiH75aKi0W5S9GLPpy8iVpuLZh53YgNJyBEVYBE/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Constitucional
+      </a>
+      <a href="#" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito do Trabalho
+      </a>
+      <a href="#" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Dir. Processual do Trabalho
+      </a>
+      <a href="#" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Administrativo
+      </a>
+      <a href="#" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Civil
+      </a>
+      <a href="#" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Processual Civil
+      </a>
     </div>
-    <button class="btn" onclick="registrarErro()">Registrar erro →</button>
-  </div>
-  <div class="card">
-    <div class="card-title">📋 Caderno de Erros</div>
-    <div class="filtros" id="erros-filtros"></div>
-    <div id="erros-list"></div>
   </div>
 </div>
 
@@ -525,7 +515,6 @@ function iniciarSync(uid){
       const d=snap.data();
       window._d.sessoes=d.sessoes||[];
       window._d.revisoes=d.revisoes||[];
-      window._d.erros=d.erros||[];
       window._d.subTotais=d.subTotais||{};
       window._d.metaSemanal=d.metaSemanal||30;
       const mEl=document.getElementById('meta-semanal-input');
@@ -565,7 +554,7 @@ const DISC={
 const DNAMES=Object.keys(DISC);
 const TOTAL_G=DNAMES.reduce((a,d)=>a+DISC[d].total,0);
 
-window._d={sessoes:[],revisoes:[],erros:[],subTotais:{}};
+window._d={sessoes:[],revisoes:[],subTotais:{}};
 
 function hoje(){return new Date().toISOString().slice(0,10);}
 function fmtD(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
@@ -581,14 +570,13 @@ function showToast(msg,tipo='ok'){
 }
 
 function popularTodosSelects(){
-  ['f-disc','e-disc'].forEach(id=>{
+  ['f-disc'].forEach(id=>{
     const sel=document.getElementById(id);
     if(!sel)return;
     sel.innerHTML='<option value="">Selecione...</option>';
     DNAMES.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
   });
   document.getElementById('f-data').value=hoje();
-  document.getElementById('e-data').value=hoje();
 }
 
 window.popularSubs=function(targetId,sourceId){
@@ -596,16 +584,6 @@ window.popularSubs=function(targetId,sourceId){
   const sel=document.getElementById(targetId);
   sel.innerHTML='<option value="">Selecione o subtópico</option>';
   if(disc&&DISC[disc])DISC[disc].subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
-};
-
-window.previewFoto=function(evt){
-  const file=evt.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const img=document.getElementById('e-foto-preview');
-    img.src=e.target.result;img.style.display='block';
-  };
-  reader.readAsDataURL(file);
 };
 
 window.registrarSessao=async function(){
@@ -676,32 +654,6 @@ window.gerarICSLote=function(){
   showToast('📅 '+p.length+' eventos baixados!');
 };
 
-window.registrarErro=async function(){
-  const data=document.getElementById('e-data').value||hoje();
-  const disc=document.getElementById('e-disc').value;
-  const sub=document.getElementById('e-sub').value;
-  const tema=document.getElementById('e-tema').value.trim();
-  if(!disc||!sub){showToast('Selecione disciplina e subtópico','err');return;}
-  if(!tema){showToast('Descreva o tema do erro','err');return;}
-  const erro={id:Date.now(),data,disc,sub,tema,revisado:false,fotoBase64:null};
-  const preview=document.getElementById('e-foto-preview').src;
-  if(preview&&preview.startsWith('data:'))erro.fotoBase64=preview;
-  window._d.erros.unshift(erro);
-  ['e-disc','e-sub'].forEach(id=>document.getElementById(id).value='');
-  ['e-tema'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('e-data').value=hoje();
-  document.getElementById('e-sub').innerHTML='<option value="">Selecione a disciplina</option>';
-  document.getElementById('e-foto').value='';
-  document.getElementById('e-foto-preview').style.display='none';
-  document.getElementById('e-foto-preview').src='';
-  await window._salvar();showToast('🚨 Erro registrado!');render();
-};
-
-window.marcarErroRevisado=async function(id){
-  const e=window._d.erros.find(e=>e.id===id);
-  if(e){e.revisado=true;e.dataRevisao=hoje();await window._salvar();render();showToast('✅ Revisado!');}
-};
-window.deletarErro=async function(id){window._d.erros=window._d.erros.filter(e=>e.id!==id);await window._salvar();render();showToast('Removido');};
 window.deletarSessao=async function(id){window._d.sessoes=window._d.sessoes.filter(s=>s.id!==id);await window._salvar();render();showToast('Removido');};
 
 window.exportarJSON=function(){
@@ -713,24 +665,24 @@ window.importarJSON=async function(evt){
   const reader=new FileReader();
   reader.onload=async function(e){
     try{const d=JSON.parse(e.target.result);if(!d.sessoes)throw new Error();
-      window._d.sessoes=d.sessoes||[];window._d.revisoes=d.revisoes||[];window._d.erros=d.erros||[];window._d.subTotais=d.subTotais||{};
+      window._d.sessoes=d.sessoes||[];window._d.revisoes=d.revisoes||[];window._d.subTotais=d.subTotais||{};
       await window._salvar();render();showToast('✅ Importado!');
     }catch{showToast('❌ Arquivo inválido','err');}
   };
   reader.readAsText(file);evt.target.value='';
 };
 
-function render(){renderStats();renderDash();renderProgresso();renderRevisoes();renderErros(erroFiltro);renderHistorico(histFiltro);}
+function render(){renderStats();renderDash();renderProgresso();renderRevisoes();renderHistorico(histFiltro);}
 
 function renderStats(){
   const d=window._d;
   const tA=d.sessoes.reduce((a,s)=>a+s.aulas,0);
   const tP=d.sessoes.reduce((a,s)=>a+(s.paginas||0),0);
-  const tQ=d.sessoes.reduce((a,s)=>a+s.q,0);
-  const tAc=d.sessoes.reduce((a,s)=>a+s.ac,0);
+  const tQ=d.sessoes.reduce((a,s)=>a+(s.q||0),0);
+  const tAc=d.sessoes.reduce((a,s)=>a+(s.ac||0),0);
   const dias=[...new Set(d.sessoes.map(s=>s.data))].length;
-  // Horas: aulas × 0.5h + páginas ÷ 40h
-  const hTotal=tA*0.5 + tP/40;
+  // Horas: aulas × 0.5h + páginas ÷ 40h + questões x (2/60)h
+  const hTotal = tA*0.5 + tP/40 + tQ*(2/60);
   document.getElementById('s-aulas').textContent=tA;
   document.getElementById('s-questoes').textContent=tQ;
   document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
@@ -757,7 +709,7 @@ function renderMetaSemanal(d, hTotalGeral){
   const dom=new Date(seg);dom.setDate(seg.getDate()+6);dom.setHours(23,59,59,999);
   const semanaIso=[...Array(7)].map((_,i)=>{const dt=new Date(seg);dt.setDate(seg.getDate()+i);return dt.toISOString().slice(0,10);});
   const sessoesSemana=d.sessoes.filter(s=>semanaIso.includes(s.data));
-  const hSemana=sessoesSemana.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40,0);
+  const hSemana=sessoesSemana.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0);
   const pct=Math.min(100,hSemana/meta*100);
   const faltam=Math.max(0,meta-hSemana);
   const cor=pct>=100?'var(--success)':pct>=60?'var(--accent)':'var(--warn)';
@@ -778,7 +730,7 @@ function renderMetaSemanal(d, hTotalGeral){
     '<div style="display:flex;gap:4px">' +
       semanaIso.map((iso,i)=>{
         const labels=['S','T','Q','Q','S','S','D'];
-        const h=sessoesSemana.filter(s=>s.data===iso).reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40,0);
+        const h=sessoesSemana.filter(s=>s.data===iso).reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0);
         const isHoje=iso===hoje();
         const bc=h>0?(h>=4?'var(--success)':h>=2?'var(--accent)':'var(--surface3)'):'var(--border)';
         const tc=h>0?'var(--text)':'var(--muted)';
@@ -795,7 +747,7 @@ window.atualizarMeta=async function(){
   const meta=parseFloat(metaEl.value)||30;
   window._d.metaSemanal=meta;
   await window._salvar();
-  renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40,0));
+  renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0));
   showToast('✅ Meta atualizada!');
 };
 
@@ -804,9 +756,6 @@ function renderDash(){
   const ru=d.revisoes.filter(r=>!r.feita&&diasAte(r.data)<=0).slice(0,4);
   document.getElementById('dash-rev').innerHTML=ru.length===0?'<div class="empty">Sem revisões urgentes 🎉</div>'
     :ru.map(r=>'<div class="rev-item urgente" style="margin-bottom:5px"><div><div style="font-size:.74rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted)">'+r.sub+' · '+r.label+'</div></div><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div>').join('');
-  const ep=d.erros.filter(e=>!e.revisado).slice(0,4);
-  document.getElementById('dash-erros').innerHTML=ep.length===0?'<div class="empty">Sem erros pendentes 🎉</div>'
-    :ep.map(e=>'<div style="background:var(--bg);border:1px solid #5a1f1f;border-radius:6px;padding:8px 11px;margin-bottom:5px"><div style="font-size:.72rem;font-weight:500;color:var(--danger)">'+e.disc+'</div><div style="font-size:.66rem;color:var(--muted)">'+e.sub+'</div><div style="font-size:.72rem;margin-top:3px">'+e.tema+'</div></div>').join('');
   document.getElementById('dash-disc').innerHTML='<div>'+DNAMES.map(nome=>{
     const disc=DISC[nome];
     const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
@@ -855,26 +804,6 @@ function renderRevisoes(){
     else if(diff===0){tc='t-hoje';tt='Hoje!';ic='hoje';}
     else{tc='t-proxima';tt='em '+diff+'d';}
     return '<div class="rev-item '+ic+'"><div style="flex:1;min-width:0"><div style="font-size:.76rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted);margin-top:1px">'+r.sub+' · '+r.label+' · '+fmtD(r.data)+'</div></div><div class="rev-actions"><span class="rev-tag '+tc+'">'+tt+'</span><button class="btn-ics" onclick="gerarICS('+r.id+')">📅</button><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div></div>';
-  }).join('');
-}
-
-let erroFiltro='todos';
-function renderErrosFiltros(){
-  const opts=['todos','pendentes','revisados',...DNAMES];
-  document.getElementById('erros-filtros').innerHTML=opts.map(o=>'<button class="filtro-btn'+(erroFiltro===o?' active':'')+'" onclick="setErroF(\''+o+'\')">'+( o==='todos'?'Todos':o==='pendentes'?'Pendentes':o==='revisados'?'Revisados':o.split(' ').slice(-1)[0])+'</button>').join('');
-}
-window.setErroF=function(f){erroFiltro=f;renderErros(f);};
-
-function renderErros(filtro){
-  renderErrosFiltros();
-  let lista=[...window._d.erros];
-  if(filtro==='pendentes')lista=lista.filter(e=>!e.revisado);
-  else if(filtro==='revisados')lista=lista.filter(e=>e.revisado);
-  else if(filtro!=='todos')lista=lista.filter(e=>e.disc===filtro);
-  if(lista.length===0){document.getElementById('erros-list').innerHTML='<div class="empty">Nenhum erro nesta categoria.</div>';return;}
-  document.getElementById('erros-list').innerHTML=lista.map(e=>{
-    const fotoHtml=e.fotoBase64?'<img src="'+e.fotoBase64+'" onclick="this.style.maxWidth=this.style.maxWidth===\'80px\'?\'100%\':\'80px\'" style="max-width:80px;cursor:pointer;border-radius:6px;margin-top:6px;border:1px solid var(--border)" title="Toque para ampliar">':'';
-    return '<div class="erro-item"><div class="erro-header"><div><div class="erro-disc">'+e.disc+'</div><div class="erro-sub">'+e.sub+' · '+fmtD(e.data)+'</div></div><span class="erro-status '+(e.revisado?'status-revisado':'status-pendente')+'">'+(e.revisado?'Revisado':'Pendente')+'</span></div><div class="erro-tema">📌 '+e.tema+'</div>'+fotoHtml+(e.revisado&&e.dataRevisao?'<div style="font-size:.67rem;color:var(--success);margin-top:4px">✓ Revisado em '+fmtD(e.dataRevisao)+'</div>':'')+'<div class="erro-actions">'+(!e.revisado?'<button class="btn btn-sm btn-ghost" onclick="marcarErroRevisado('+e.id+')">✓ Revisado</button>':'')+'<button class="btn btn-sm btn-danger" onclick="deletarErro('+e.id+')">Remover</button></div></div>';
   }).join('');
 }
 
@@ -1034,7 +963,7 @@ function notaFinal(acertoEsp, acertoGer) {
 // ── Probabilidade de convocação: sigmoide calibrada nos dados históricos ──
 // Âncoras: 165→5% | 220→35% | 240→55% | 265→80% | 300→95%
 function probConvocacao(nota) {
-  const mid = 255;
+  const mid = 255; // Ajuste efetuado
   const steep = 0.04;
   return 1 / (1 + Math.exp(-steep * (nota - mid)));
 }
