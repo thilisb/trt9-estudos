@@ -175,17 +175,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 .acerto-ok{color:var(--accent);font-weight:600;}
 .acerto-ruim{color:var(--danger);font-weight:600;}
 
-/* ── Erros ── */
-.erro-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;transition:border-color .2s;}
-.erro-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
-.erro-disc{font-weight:600;font-size:.76rem;color:var(--danger);}
-.erro-sub{font-size:.65rem;color:var(--muted);margin-top:2px;}
-.erro-tema{font-size:.75rem;margin:6px 0;color:var(--text2);line-height:1.5;}
-.erro-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-.erro-status{display:inline-flex;align-items:center;font-size:.58rem;padding:3px 8px;border-radius:99px;font-weight:600;}
-.status-pendente{background:var(--danger-bg);color:var(--danger);}
-.status-revisado{background:var(--success-bg);color:var(--success);}
-
 /* ── Filtros ── */
 .filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
 .filtro-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:99px;color:var(--muted);font-family:var(--mono);font-size:.6rem;padding:4px 12px;cursor:pointer;transition:all .15s;}
@@ -288,7 +277,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 </nav>
 
 <div class="page active" id="page-dashboard">
-  <!-- Hero card com ring de progresso -->
   <div class="card" style="background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);">
     <div class="dash-hero">
       <div class="dash-ring-wrap">
@@ -314,7 +302,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       </div>
     </div>
   </div>
-  <!-- Heatmap + alertas -->
   <div class="s2col">
     <div class="card">
       <div class="card-title">🗓 Últimos 14 dias</div>
@@ -337,7 +324,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     <div id="meta-semanal-display"></div>
     <div style="font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center">Horas contam aulas (0,5h) + páginas (40/h) + questões (2 min/q)</div>
   </div>
-  <!-- Progresso resumido -->
   <div class="card">
     <div class="card-title">📚 Progresso por disciplina</div>
     <div id="dash-disc"></div>
@@ -374,7 +360,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
   </div>
 </div>
 
-<div class="page" id="page-erros">
+<<div class="page" id="page-erros">
   <div class="card">
     <div class="card-title">📚 Meus Cadernos de Erros (Google Drive)</div>
     <p style="font-size:.7rem;color:var(--muted);margin-bottom:14px">
@@ -529,8 +515,10 @@ function iniciarSync(uid){
       const d=snap.data();
       window._d.sessoes=d.sessoes||[];
       window._d.revisoes=d.revisoes||[];
-      window._d.erros=d.erros||[];
       window._d.subTotais=d.subTotais||{};
+      window._d.metaSemanal=d.metaSemanal||30;
+      const mEl=document.getElementById('meta-semanal-input');
+      if(mEl)mEl.value=window._d.metaSemanal;
     }
     setSyncStatus('✓ Sincronizado',true);
     render();
@@ -566,7 +554,7 @@ const DISC={
 const DNAMES=Object.keys(DISC);
 const TOTAL_G=DNAMES.reduce((a,d)=>a+DISC[d].total,0);
 
-window._d={sessoes:[],revisoes:[],erros:[],subTotais:{}};
+window._d={sessoes:[],revisoes:[],subTotais:{}};
 
 function hoje(){return new Date().toISOString().slice(0,10);}
 function fmtD(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
@@ -598,54 +586,7 @@ window.popularSubs=function(targetId,sourceId){
   if(disc&&DISC[disc])DISC[disc].subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
 };
 
-window.deletarSessao=async function(id){window._d.sessoes=window._d.sessoes.filter(s=>s.id!==id);await window._salvar();render();showToast('Removido');};
-
-function renderMetaSemanal(d, hTotalGeral){
-  const metaEl=document.getElementById('meta-semanal-input');
-  const meta=metaEl?parseFloat(metaEl.value)||30:30;
-  const agora=new Date();
-  const diaSemana=agora.getDay()===0?6:agora.getDay()-1;
-  const seg=new Date(agora);seg.setDate(agora.getDate()-diaSemana);seg.setHours(0,0,0,0);
-  const semanaIso=[...Array(7)].map((_,i)=>{const dt=new Date(seg);dt.setDate(seg.getDate()+i);return dt.toISOString().slice(0,10);});
-  const sessoesSemana=d.sessoes.filter(s=>semanaIso.includes(s.data));
-  const hSemana=sessoesSemana.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40+(s.q||0)*(2/60),0);
-  const pct=Math.min(100,hSemana/meta*100);
-  const faltam=Math.max(0,meta-hSemana);
-  const cor=pct>=100?'var(--success)':pct>=60?'var(--accent)':'var(--warn)';
-  const el=document.getElementById('meta-semanal-display');
-  if(!el)return;
-  const labels=['S','T','Q','Q','S','S','D'];
-  el.innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
-      '<div><span style="font-family:var(--serif);font-size:1.7rem;font-weight:700;color:'+cor+'">'+hSemana.toFixed(1)+'h</span>'+
-      '<span style="font-size:.7rem;color:var(--muted)"> / '+meta+'h meta</span></div>'+
-      '<div style="text-align:right;font-size:.65rem;color:var(--muted)">'+
-        (pct>=100?'<span style="color:var(--success);font-weight:600">✅ Meta atingida!</span>':'Faltam <strong style="color:'+cor+'">'+faltam.toFixed(1)+'h</strong>')+
-      '</div></div>'+
-    '<div style="background:var(--border);border-radius:99px;height:8px;overflow:hidden;margin-bottom:10px">'+
-      '<div style="width:'+pct+'%;height:100%;background:'+cor+';border-radius:99px;transition:width .5s ease"></div></div>'+
-    '<div style="display:flex;gap:4px">'+
-      semanaIso.map((iso,i)=>{
-        const h=sessoesSemana.filter(s=>s.data===iso).reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40+(s.q||0)*(2/60),0);
-        const isHoje=iso===hoje();
-        const bc=h>0?(h>=4?'var(--success)':h>=2?'var(--accent)':'var(--surface3)'):'var(--border)';
-        return '<div style="flex:1;background:'+bc+';border:1px solid '+(isHoje?'var(--accent)':'transparent')+';border-radius:6px;padding:5px 2px;text-align:center">'+
-          '<div style="font-size:.5rem;color:var(--muted)">'+labels[i]+'</div>'+
-          '<div style="font-size:.6rem;color:'+(h>0?'var(--text)':'var(--muted)')+';font-weight:600;margin-top:2px">'+(h>0?h.toFixed(1)+'h':'·')+'</div></div>';
-      }).join('')+
-    '</div>';
-}
-
-window.atualizarMeta=async function(){
-  const metaEl=document.getElementById('meta-semanal-input');
-  const meta=parseFloat(metaEl.value)||30;
-  window._d.metaSemanal=meta;
-  await window._salvar();
-  renderMetaSemanal(window._d,0);
-  showToast('✅ Meta atualizada!');
-};
-
-window.exportarJSON=function(){
+window.registrarSessao=async function(){
   const data=document.getElementById('f-data').value||hoje();
   const disc=document.getElementById('f-disc').value;
   const sub=document.getElementById('f-sub').value;
@@ -713,7 +654,9 @@ window.gerarICSLote=function(){
   showToast('📅 '+p.length+' eventos baixados!');
 };
 
-window.registrarSessao=async function(){
+window.deletarSessao=async function(id){window._d.sessoes=window._d.sessoes.filter(s=>s.id!==id);await window._salvar();render();showToast('Removido');};
+
+window.exportarJSON=function(){
   const blob=new Blob([JSON.stringify({versao:4,exportadoEm:new Date().toISOString(),...window._d},null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='trt9_dados_'+hoje()+'.json';a.click();URL.revokeObjectURL(url);showToast('✅ Exportado!');
 };
@@ -722,7 +665,7 @@ window.importarJSON=async function(evt){
   const reader=new FileReader();
   reader.onload=async function(e){
     try{const d=JSON.parse(e.target.result);if(!d.sessoes)throw new Error();
-      window._d.sessoes=d.sessoes||[];window._d.revisoes=d.revisoes||[];window._d.erros=d.erros||[];window._d.subTotais=d.subTotais||{};
+      window._d.sessoes=d.sessoes||[];window._d.revisoes=d.revisoes||[];window._d.subTotais=d.subTotais||{};
       await window._salvar();render();showToast('✅ Importado!');
     }catch{showToast('❌ Arquivo inválido','err');}
   };
@@ -738,29 +681,81 @@ function renderStats(){
   const tQ=d.sessoes.reduce((a,s)=>a+(s.q||0),0);
   const tAc=d.sessoes.reduce((a,s)=>a+(s.ac||0),0);
   const dias=[...new Set(d.sessoes.map(s=>s.data))].length;
-  const hTotal=tA*0.5 + tP/40 + tQ*(2/60);
+  // Horas: aulas × 0.5h + páginas ÷ 40h + questões x (2/60)h
+  const hTotal = tA*0.5 + tP/40 + tQ*(2/60);
   document.getElementById('s-aulas').textContent=tA;
   document.getElementById('s-questoes').textContent=tQ;
   document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
   document.getElementById('s-dias').textContent=dias;
   document.getElementById('s-horas').textContent=hTotal.toFixed(1)+'h';
   document.getElementById('s-prog').textContent=Math.round(tA/TOTAL_G*100)+'%';
+  // Atualizar ring de progresso
   const pct=Math.min(100,Math.round(tA/TOTAL_G*100));
   const circ=2*Math.PI*75;
   const fill=pct/100*circ;
   const ring=document.getElementById('dash-ring-fill');
   if(ring)ring.setAttribute('stroke-dasharray',fill+' '+circ);
+  // Semana atual
   renderMetaSemanal(d,hTotal);
 }
+
+function renderMetaSemanal(d, hTotalGeral){
+  const metaEl=document.getElementById('meta-semanal-input');
+  const meta=metaEl?parseFloat(metaEl.value)||30:30;
+  // Semana atual: segunda a domingo
+  const agora=new Date();
+  const diaSemana=agora.getDay()===0?6:agora.getDay()-1; // 0=seg
+  const seg=new Date(agora);seg.setDate(agora.getDate()-diaSemana);seg.setHours(0,0,0,0);
+  const dom=new Date(seg);dom.setDate(seg.getDate()+6);dom.setHours(23,59,59,999);
+  const semanaIso=[...Array(7)].map((_,i)=>{const dt=new Date(seg);dt.setDate(seg.getDate()+i);return dt.toISOString().slice(0,10);});
+  const sessoesSemana=d.sessoes.filter(s=>semanaIso.includes(s.data));
+  const hSemana=sessoesSemana.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0);
+  const pct=Math.min(100,hSemana/meta*100);
+  const faltam=Math.max(0,meta-hSemana);
+  const cor=pct>=100?'var(--success)':pct>=60?'var(--accent)':'var(--warn)';
+  const el=document.getElementById('meta-semanal-display');
+  if(el)el.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<div>' +
+        '<span style="font-family:var(--serif);font-size:1.7rem;font-weight:700;color:'+cor+'">'+hSemana.toFixed(1)+'h</span>' +
+        '<span style="font-size:.7rem;color:var(--muted)"> / '+meta+'h meta</span>' +
+      '</div>' +
+      '<div style="text-align:right;font-size:.65rem;color:var(--muted)">'+
+        (pct>=100?'<span style="color:var(--success);font-weight:600">✅ Meta atingida!</span>':'Faltam <strong style="color:'+cor+'">'+faltam.toFixed(1)+'h</strong>')+
+      '</div>' +
+    '</div>' +
+    '<div style="background:var(--border);border-radius:99px;height:8px;overflow:hidden;margin-bottom:10px">' +
+      '<div style="width:'+pct+'%;height:100%;background:'+cor+';border-radius:99px;transition:width .5s ease"></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:4px">' +
+      semanaIso.map((iso,i)=>{
+        const labels=['S','T','Q','Q','S','S','D'];
+        const h=sessoesSemana.filter(s=>s.data===iso).reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0);
+        const isHoje=iso===hoje();
+        const bc=h>0?(h>=4?'var(--success)':h>=2?'var(--accent)':'var(--surface3)'):'var(--border)';
+        const tc=h>0?'var(--text)':'var(--muted)';
+        return '<div style="flex:1;background:'+bc+';border:1px solid '+(isHoje?'var(--accent)':'transparent')+';border-radius:6px;padding:5px 2px;text-align:center">' +
+          '<div style="font-size:.5rem;color:var(--muted)">'+labels[i]+'</div>' +
+          '<div style="font-size:.6rem;color:'+tc+';font-weight:600;margin-top:2px">'+(h>0?h.toFixed(h<10?1:0)+'h':'·')+'</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+}
+
+window.atualizarMeta=async function(){
+  const metaEl=document.getElementById('meta-semanal-input');
+  const meta=parseFloat(metaEl.value)||30;
+  window._d.metaSemanal=meta;
+  await window._salvar();
+  renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0));
+  showToast('✅ Meta atualizada!');
+};
 
 function renderDash(){
   const d=window._d;
   const ru=d.revisoes.filter(r=>!r.feita&&diasAte(r.data)<=0).slice(0,4);
   document.getElementById('dash-rev').innerHTML=ru.length===0?'<div class="empty">Sem revisões urgentes 🎉</div>'
     :ru.map(r=>'<div class="rev-item urgente" style="margin-bottom:5px"><div><div style="font-size:.74rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted)">'+r.sub+' · '+r.label+'</div></div><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div>').join('');
-  const ep=d.erros?d.erros.filter(e=>!e.revisado).slice(0,4):[];
-  if(document.getElementById('dash-erros'))document.getElementById('dash-erros').innerHTML=ep.length===0?'<div class="empty">Sem erros pendentes 🎉</div>'
-    :ep.map(e=>'<div style="background:var(--bg);border:1px solid #5a1f1f;border-radius:6px;padding:8px 11px;margin-bottom:5px"><div style="font-size:.72rem;font-weight:500;color:var(--danger)">'+e.disc+'</div><div style="font-size:.66rem;color:var(--muted)">'+e.sub+'</div><div style="font-size:.72rem;margin-top:3px">'+e.tema+'</div></div>').join('');
   document.getElementById('dash-disc').innerHTML='<div>'+DNAMES.map(nome=>{
     const disc=DISC[nome];
     const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
@@ -826,7 +821,7 @@ function renderHistorico(filtro){
   document.getElementById('hist-list').innerHTML=lista.slice(0,60).map(s=>{
     const pct=s.q>0?Math.round(s.ac/s.q*100):null;
     const cls=pct===null?'':pct>=70?'acerto-bom':pct>=50?'acerto-ok':'acerto-ruim';
-    return '<div class="hist-item"><div class="hist-top"><span class="hist-disc">'+s.disc+'</span><div style="display:flex;align-items:center;gap:6px"><span class="hist-date">'+fmtD(s.data)+'</span><button class="btn btn-sm btn-danger" onclick="deletarSessao('+s.id+')">✕</button></div></div><div class="hist-sub">'+s.sub+'</div><div class="hist-nums"><span>'+s.aulas+'aul</span><span>'+s.q+'q</span>'+(pct!==null?'<span class="'+cls+'">'+pct+'% ('+s.ac+'/'+s.q+')</span>':'')+(s.obs?'<span style="color:var(--muted)">📝 '+s.obs+'</span>':'')+'</div></div>';
+    return '<div class="hist-item"><div class="hist-top"><span class="hist-disc">'+s.disc+'</span><div style="display:flex;align-items:center;gap:6px"><span class="hist-date">'+fmtD(s.data)+'</span><button class="btn btn-sm btn-danger" onclick="deletarSessao('+s.id+')">✕</button></div></div><div class="hist-sub">'+s.sub+'</div><div class="hist-nums"><span>'+s.aulas+'aul</span>'+(s.paginas?'<span>'+s.paginas+'págs</span>':'')+'<span>'+s.q+'q</span>'+(pct!==null?'<span class="'+cls+'">'+pct+'% ('+s.ac+'/'+s.q+')</span>':'')+(s.obs?'<span style="color:var(--muted)">📝 '+s.obs+'</span>':'')+'</div></div>';
   }).join('');
 }
 
@@ -968,7 +963,7 @@ function notaFinal(acertoEsp, acertoGer) {
 // ── Probabilidade de convocação: sigmoide calibrada nos dados históricos ──
 // Âncoras: 165→5% | 220→35% | 240→55% | 265→80% | 300→95%
 function probConvocacao(nota) {
-  const mid = 255;
+  const mid = 255; // Ajuste efetuado
   const steep = 0.04;
   return 1 / (1 + Math.exp(-steep * (nota - mid)));
 }
