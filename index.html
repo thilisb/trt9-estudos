@@ -384,30 +384,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 </div>
 
 <div class="page" id="page-erros">
-  <div class="card">
-    <div class="card-title">📚 Meus Cadernos de Erros (Google Drive)</div>
-    <p style="font-size:.7rem;color:var(--muted);margin-bottom:14px">
-      📁 Estudos para concurso / 📚 Cadernos de Erros
+  <!-- Vista principal: links dos cadernos -->
+  <div class="card" id="erros-links-card">
+    <div class="card-title" style="justify-content:space-between">
+      <span>📚 Meus Cadernos de Erros</span>
+      <button class="btn btn-sm btn-ghost" onclick="abrirConfiguracaoLinks()" style="font-size:.6rem">⚙️ Configurar links</button>
+    </div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:14px" id="erros-path-label">
+      📁 Materiais TRT / 📚 Cadernos de Erros
     </p>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <a href="https://docs.google.com/document/d/18E5GfiH75aKi0W5S9GLPpy8iVpuLZh53YgNJyBEVYBE/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
-        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Constitucional
-      </a>
-      <a href="https://docs.google.com/document/d/1npGxbmtOcx2C5HUPc_nMiLSHg16FI-aM4nUxZ1BCJYQ/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
-        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito do Trabalho
-      </a>
-      <a href="https://docs.google.com/document/d/1vZNmy4TqdJV8Tgo2600GfAhP851y8vmN8Y3-ShaamK8/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
-        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Dir. Processual do Trabalho
-      </a>
-      <a href="https://docs.google.com/document/d/1kMPvkZKQQctq_l5pCuBjptaO29eAiliWnu1uaQmaxO4/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
-        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Administrativo
-      </a>
-      <a href="https://docs.google.com/document/d/12vXJGNWAW6I1wKhkrfzoI7LehlRVjPeu-s_yA8y9PX8/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
-        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Civil
-      </a>
-      <a href="https://docs.google.com/document/d/1Au03pdoSZz36NTUh8LBV21Ej0N_PEgmO9STnxlybYA4/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
-        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Processual Civil
-      </a>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="erros-botoes"></div>
+    <p id="erros-aviso-config" style="display:none;font-size:.72rem;color:var(--accent);background:var(--accent-glow);border:1px solid rgba(232,162,74,.2);border-radius:var(--radius-xs);padding:12px;line-height:1.7;margin-top:8px">
+      ⚙️ Nenhum link configurado ainda.<br>Toque em <strong>"Configurar links"</strong> acima e cole os links dos seus docs do Google Drive.
+    </p>
+  </div>
+
+  <!-- Vista de configuração -->
+  <div class="card" id="erros-config-card" style="display:none">
+    <div class="card-title">⚙️ Configurar Links dos Cadernos</div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:16px;line-height:1.7">
+      Cole o link de cada doc do seu Google Drive. Os links ficam salvos só no seu dispositivo e nunca são compartilhados.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:12px;" id="erros-config-campos"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn" onclick="salvarLinksErros()" style="flex:1">Salvar links →</button>
+      <button class="btn btn-ghost" onclick="fecharConfiguracaoLinks()" style="flex:0 0 auto;width:auto;margin:0;padding:11px 16px">Cancelar</button>
     </div>
   </div>
 </div>
@@ -962,6 +963,74 @@ window.showPage=function(id,btn){
   if(btn)btn.classList.add('active');
   render();
   if(id==='probabilidade' && window.renderProbabilidade) window.renderProbabilidade();
+  if(id==='erros') renderErrosLinks();
+};
+
+// ═══════════════════════════════════════════════════════
+// MÓDULO — CADERNOS DE ERROS (LINKS CONFIGURÁVEIS POR USUÁRIO)
+// ═══════════════════════════════════════════════════════
+
+const ERROS_DISCS = [
+  { key: 'dt',  label: '🚨 Erros — Direito do Trabalho' },
+  { key: 'dpt', label: '🚨 Erros — Dir. Processual do Trabalho' },
+  { key: 'dc',  label: '🚨 Erros — Direito Constitucional' },
+  { key: 'da',  label: '🚨 Erros — Direito Administrativo' },
+  { key: 'dci', label: '🚨 Erros — Direito Civil' },
+  { key: 'dpc', label: '🚨 Erros — Direito Processual Civil' },
+];
+
+function getLinksErros() {
+  try { return JSON.parse(localStorage.getItem('trt9_drive_links') || '{}'); } catch { return {}; }
+}
+
+function renderErrosLinks() {
+  const links = getLinksErros();
+  const temLinks = ERROS_DISCS.some(d => links[d.key]);
+  const botoes = document.getElementById('erros-botoes');
+  const aviso = document.getElementById('erros-aviso-config');
+  if (!botoes) return;
+
+  if (!temLinks) {
+    botoes.innerHTML = '';
+    aviso.style.display = 'block';
+    return;
+  }
+  aviso.style.display = 'none';
+  botoes.innerHTML = ERROS_DISCS.map(d => {
+    const url = links[d.key] || '';
+    if (!url) return '<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--radius-xs);font-size:.75rem;color:var(--muted)"><span style="font-size:1.1rem">📘</span><span>' + d.label + '</span><span style="margin-left:auto;font-size:.6rem">sem link</span></div>';
+    return '<a href="' + url + '" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;"><span style="font-size:1.1rem">📘</span>' + d.label + '</a>';
+  }).join('');
+}
+
+window.abrirConfiguracaoLinks = function() {
+  const links = getLinksErros();
+  const campos = document.getElementById('erros-config-campos');
+  campos.innerHTML = ERROS_DISCS.map(d =>
+    '<div class="field">' +
+      '<label>' + d.label + '</label>' +
+      '<input type="url" id="link-' + d.key + '" placeholder="https://docs.google.com/document/d/..." value="' + (links[d.key] || '') + '">' +
+    '</div>'
+  ).join('');
+  document.getElementById('erros-links-card').style.display = 'none';
+  document.getElementById('erros-config-card').style.display = 'block';
+};
+
+window.fecharConfiguracaoLinks = function() {
+  document.getElementById('erros-config-card').style.display = 'none';
+  document.getElementById('erros-links-card').style.display = 'block';
+  renderErrosLinks();
+};
+
+window.salvarLinksErros = function() {
+  const links = {};
+  ERROS_DISCS.forEach(d => {
+    const val = (document.getElementById('link-' + d.key)?.value || '').trim();
+    if (val) links[d.key] = val;
+  });
+  localStorage.setItem('trt9_drive_links', JSON.stringify(links));
+  fecharConfiguracaoLinks();
+  showToast('✅ Links salvos!');
 };
 
 popularTodosSelects();
