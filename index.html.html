@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TRT9 — Painel de Estudos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens ── */
+:root{
+  --bg:#0a0e13;
+  --surface:#111820;
+  --surface2:#182030;
+  --surface3:#1e2a3a;
+  --border:#1e2d3d;
+  --border2:#2a3d52;
+  --accent:#e8a24a;
+  --accent2:#f0bc7a;
+  --accent-glow:rgba(232,162,74,.18);
+  --danger:#e05252;
+  --danger-bg:rgba(224,82,82,.12);
+  --success:#4aae6e;
+  --success-bg:rgba(74,174,110,.12);
+  --warn:#e07a52;
+  --warn-bg:rgba(224,122,82,.12);
+  --text:#dde6f0;
+  --text2:#a8bace;
+  --muted:#5a7080;
+  --mono:'DM Mono',monospace;
+  --serif:'Fraunces',serif;
+  --radius:16px;
+  --radius-sm:10px;
+  --radius-xs:7px;
+  --shadow:0 4px 24px rgba(0,0,0,.45);
+  --shadow-sm:0 2px 12px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* ── Loading ── */
+.loading{display:flex;align-items:center;justify-content:center;min-height:100vh;font-size:.8rem;color:var(--muted);letter-spacing:.1em;}
+
+/* ── Login ── */
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;text-align:center;background:radial-gradient(ellipse at 50% 0%,rgba(232,162,74,.07) 0%,transparent 65%);}
+.login-icon{font-size:3rem;margin-bottom:20px;filter:drop-shadow(0 0 20px var(--accent-glow));}
+.login-title{font-family:var(--serif);font-size:2.4rem;font-weight:700;color:var(--accent);margin-bottom:8px;letter-spacing:-.02em;}
+.login-sub{font-size:.78rem;color:var(--muted);margin-bottom:48px;line-height:1.8;max-width:280px;}
+.btn-google{display:flex;align-items:center;gap:12px;background:#fff;color:#1a1a1a;border:none;border-radius:99px;padding:14px 28px;font-family:var(--mono);font-size:.85rem;font-weight:500;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:transform .15s,box-shadow .15s;}
+.btn-google:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(0,0,0,.5);}
+.btn-google img{width:20px;}
+
+/* ── App shell ── */
+#appScreen{display:flex;flex-direction:column;min-height:100vh;}
+
+/* ── Top bar ── */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;backdrop-filter:blur(12px);}
+.nav-top{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.nav-title{font-family:var(--serif);font-size:1.15rem;font-weight:700;color:var(--accent);letter-spacing:-.01em;}
+.nav-sub{font-size:.58rem;color:var(--muted);margin-top:2px;letter-spacing:.06em;text-transform:uppercase;}
+.nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.nav-user{font-size:.6rem;color:var(--muted);}
+.nav-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;}
+.btn-nav{border-radius:99px;font-family:var(--mono);font-size:.58rem;padding:4px 10px;cursor:pointer;border:1px solid;transition:opacity .15s;}
+.btn-nav:hover{opacity:.75;}
+.btn-export{background:var(--success-bg);color:var(--success);border-color:rgba(74,174,110,.3);}
+.btn-import-label{background:var(--surface2);color:var(--muted);border-color:var(--border2);cursor:pointer;}
+.btn-logout{background:var(--danger-bg);color:var(--danger);border-color:rgba(224,82,82,.3);}
+.sync-bar{font-size:.58rem;color:var(--muted);text-align:right;padding:3px 20px 4px;border-top:1px solid var(--border);}
+.sync-ok{color:var(--success);}.sync-err{color:var(--danger);}
+
+/* ── Bottom nav bar (Zepp style) ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:0 4px;padding-bottom:env(safe-area-inset-bottom);}
+.tab-nav{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 2px 8px;font-family:var(--mono);font-size:.52rem;color:var(--muted);background:none;border:none;cursor:pointer;transition:color .2s;white-space:nowrap;border-top:2px solid transparent;position:relative;}
+.tab-nav .tab-icon{font-size:1.2rem;line-height:1;transition:transform .2s;}
+.tab-nav.active{color:var(--accent);}
+.tab-nav.active .tab-icon{transform:scale(1.15);}
+.tab-nav.active::after{content:'';position:absolute;top:-2px;left:20%;right:20%;height:2px;background:var(--accent);border-radius:0 0 3px 3px;}
+
+/* ── Pages ── */
+.page{display:none;padding:18px 16px 90px;max-width:960px;margin:0 auto;width:100%;}
+.page.active{display:block;}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+.card-title{font-family:var(--serif);font-size:.95rem;font-weight:700;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.card-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--accent);border-radius:99px;}
+
+/* ── Dashboard — hero ring ── */
+.dash-hero{display:flex;flex-direction:column;align-items:center;padding:8px 0 20px;position:relative;}
+.dash-ring-wrap{position:relative;width:180px;height:180px;margin-bottom:16px;}
+.dash-ring-svg{width:180px;height:180px;}
+.dash-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.dash-ring-pct{font-family:var(--serif);font-size:2.6rem;font-weight:700;color:var(--accent);line-height:1;}
+.dash-ring-lbl{font-size:.58rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.dash-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;}
+.kpi-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 10px;text-align:center;transition:border-color .2s;}
+.kpi-box:hover{border-color:var(--border2);}
+.kpi-val{font-family:var(--serif);font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1;}
+.kpi-lbl{font-size:.54rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.07em;}
+
+/* ── Stats grid (legado — mantido para compat) ── */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+@media(max-width:480px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;}
+.stat-val{font-family:var(--serif);font-size:1.5rem;font-weight:700;color:var(--accent);line-height:1;}
+.stat-lbl{font-size:.55rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.07em;}
+
+/* ── 2-col grids ── */
+.s2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:640px){.s2col{grid-template-columns:1fr;}}
+.prob-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+@media(max-width:560px){.prob-2col{grid-template-columns:1fr;}}
+
+/* ── Discipline cards (progresso) ── */
+.disc-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
+.disc-item:hover{border-color:var(--border2);box-shadow:var(--shadow-sm);}
+.disc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.disc-name{font-size:.8rem;font-weight:500;display:flex;align-items:center;gap:6px;}
+.disc-stats{font-size:.65rem;color:var(--muted);}
+.bar{background:var(--border);border-radius:99px;height:5px;overflow:hidden;margin-bottom:3px;}
+.bar-fill{height:100%;border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.sub-list{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.sub-list.open{display:block;}
+.sub-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:.68rem;}
+.sub-item:last-child{border-bottom:none;}
+.sub-name{flex:1;line-height:1.4;color:var(--text2);}
+.sub-bw{width:60px;flex-shrink:0;}
+.sub-bar{background:var(--border);border-radius:99px;height:3px;overflow:hidden;}
+.sub-bar-fill{height:100%;border-radius:99px;}
+
+/* ── Sub status indicators ── */
+.sub-status{display:inline-flex;align-items:center;gap:3px;font-size:.55rem;padding:2px 6px;border-radius:99px;white-space:nowrap;flex-shrink:0;}
+.sub-status-ok{background:var(--success-bg);color:var(--success);border:1px solid rgba(74,174,110,.25);}
+.sub-status-warn{background:var(--warn-bg);color:var(--warn);border:1px solid rgba(224,122,82,.25);}
+.sub-status-none{background:var(--surface3);color:var(--muted);border:1px solid var(--border2);}
+.sub-status-notdef{background:rgba(232,162,74,.1);color:var(--accent);border:1px solid rgba(232,162,74,.25);}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;font-size:.52rem;padding:2px 7px;border-radius:99px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.b-max{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(224,82,82,.25);}
+.b-alta{background:var(--warn-bg);color:var(--warn);border:1px solid rgba(224,122,82,.25);}
+.b-man{background:var(--success-bg);color:var(--success);border:1px solid rgba(74,174,110,.25);}
+
+/* ── Forms ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:500px){.form-grid{grid-template-columns:1fr;}}
+.field label{display:block;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;}
+.field select,.field input,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-xs);color:var(--text);font-family:var(--mono);font-size:.78rem;padding:9px 11px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
+.field select:focus,.field input:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.field textarea{resize:vertical;min-height:60px;}
+.field-full{grid-column:1/-1;}
+
+/* ── Buttons ── */
+.btn{background:var(--accent);color:#0a0e13;border:none;border-radius:var(--radius-xs);padding:11px 16px;font-family:var(--mono);font-size:.8rem;font-weight:600;cursor:pointer;width:100%;margin-top:10px;transition:opacity .15s,transform .1s;letter-spacing:.03em;}
+.btn:hover{opacity:.88;}
+.btn:active{transform:scale(.98);}
+.btn-sm{width:auto;margin:0;padding:5px 10px;font-size:.65rem;border-radius:6px;}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(224,82,82,.3);}
+.btn-ics{background:#1a2744;color:#4a9eed;border:1px solid #2a3d6b;width:auto;margin:0;padding:5px 10px;font-size:.65rem;border-radius:6px;font-family:var(--mono);cursor:pointer;}
+
+/* ── Revisões ── */
+.rev-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:.73rem;margin-bottom:8px;gap:8px;transition:border-color .2s;}
+.rev-item.urgente{border-color:rgba(224,82,82,.4);background:var(--danger-bg);}
+.rev-item.hoje{border-color:rgba(232,162,74,.4);background:var(--accent-glow);}
+.rev-tag{font-size:.58rem;padding:3px 8px;border-radius:99px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+.t-urgente{background:var(--danger-bg);color:var(--danger);}
+.t-hoje{background:var(--accent-glow);color:var(--accent);}
+.t-proxima{background:var(--surface2);color:var(--muted);}
+.rev-actions{display:flex;gap:5px;align-items:center;flex-shrink:0;}
+
+/* ── Histórico ── */
+.hist-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;font-size:.72rem;transition:border-color .2s;}
+.hist-item:hover{border-color:var(--border2);}
+.hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.hist-disc{font-weight:600;color:var(--text);}
+.hist-date{color:var(--muted);font-size:.65rem;}
+.hist-sub{color:var(--text2);font-size:.65rem;margin-bottom:5px;}
+.hist-nums{display:flex;gap:10px;font-size:.66rem;flex-wrap:wrap;}
+.acerto-bom{color:var(--success);font-weight:600;}
+.acerto-ok{color:var(--accent);font-weight:600;}
+.acerto-ruim{color:var(--danger);font-weight:600;}
+
+/* ── Filtros ── */
+.filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.filtro-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:99px;color:var(--muted);font-family:var(--mono);font-size:.6rem;padding:4px 12px;cursor:pointer;transition:all .15s;}
+.filtro-btn:hover{border-color:var(--border2);color:var(--text2);}
+.filtro-btn.active{background:var(--accent);color:#0a0e13;border-color:var(--accent);font-weight:600;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:80px;right:14px;left:14px;max-width:400px;margin:0 auto;background:var(--success);color:#0a0e13;font-family:var(--mono);font-size:.74rem;font-weight:600;padding:10px 16px;border-radius:var(--radius-sm);transform:translateY(20px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);z-index:999;text-align:center;box-shadow:var(--shadow);}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ── Empty state ── */
+.empty{color:var(--muted);font-size:.72rem;text-align:center;padding:24px;line-height:2;}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;}
+
+/* ── Dashboard disc mini ── */
+.dash-disc-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.dash-disc-item:last-child{border-bottom:none;}
+.dash-disc-name{font-size:.68rem;flex:1;color:var(--text2);}
+.dash-disc-bar{flex:2;background:var(--border);border-radius:99px;height:4px;overflow:hidden;}
+.dash-disc-bar-fill{height:100%;border-radius:99px;transition:width .5s ease;}
+.dash-disc-pct{font-size:.65rem;color:var(--muted);min-width:30px;text-align:right;}
+
+/* ── Dashboard alert items ── */
+.dash-alert{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius-xs);margin-bottom:6px;font-size:.7rem;}
+.dash-alert-urg{background:var(--danger-bg);border:1px solid rgba(224,82,82,.2);}
+.dash-alert-acc{background:var(--accent-glow);border:1px solid rgba(232,162,74,.2);}
+.dash-alert-ok{background:var(--surface2);border:1px solid var(--border);}
+.dash-alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* ── Probabilidade ── */
+.prob-gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:8px 0 4px;}
+.prob-gauge-svg{width:190px;height:105px;}
+.prob-gauge-val{font-family:var(--serif);font-size:2.4rem;font-weight:700;text-anchor:middle;dominant-baseline:middle;}
+.prob-gauge-lbl{font-family:var(--mono);font-size:.56rem;fill:var(--muted);text-anchor:middle;}
+.prob-diag{font-size:.7rem;color:var(--text2);text-align:center;line-height:1.6;margin-top:8px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-xs);border:1px solid var(--border);}
+.prob-disc-table{width:100%;border-collapse:collapse;font-size:.67rem;}
+.prob-disc-table th{color:var(--muted);font-weight:500;text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);font-size:.58rem;text-transform:uppercase;letter-spacing:.07em;}
+.prob-disc-table td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.prob-disc-table tr:last-child td{border-bottom:none;}
+.prob-disc-table tr:hover td{background:var(--surface2);}
+.alavanca-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:border-color .2s;}
+.alavanca-item:hover{border-color:var(--border2);}
+.alavanca-nome{font-size:.73rem;font-weight:500;flex:1;}
+.alavanca-gain{font-size:.75rem;font-weight:700;color:var(--success);white-space:nowrap;}
+.alavanca-bar-wrap{width:70px;flex-shrink:0;}
+.prob-aviso{font-size:.62rem;color:var(--muted);text-align:center;padding:12px;border-top:1px solid var(--border);margin-top:6px;line-height:1.7;}
+.tag-critico{background:var(--danger-bg);color:var(--danger);font-size:.54rem;padding:2px 6px;border-radius:99px;margin-left:5px;font-weight:600;}
+.tag-alto{background:var(--warn-bg);color:var(--warn);font-size:.54rem;padding:2px 6px;border-radius:99px;margin-left:5px;font-weight:600;}
+
+/* ── Section label ── */
+.section-label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;padding-left:2px;}
+
+/* ── Heatmap semanal ── */
+.heatmap-row{display:flex;gap:5px;align-items:center;margin-bottom:4px;}
+.heatmap-day{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--muted);transition:transform .15s;}
+.heatmap-day.ativo{color:var(--accent);font-weight:600;transform:scale(1.05);}
+.heatmap-day.hoje{border:1px solid var(--accent);}
+
+/* ── Progresso: legenda de status ── */
+.prog-legenda{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-xs);border:1px solid var(--border);}
+.prog-legenda-item{display:flex;align-items:center;gap:5px;font-size:.58rem;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loadingScreen">Carregando...</div>
+
+<div class="login-screen" id="loginScreen" style="display:none">
+  <div class="login-icon">⚖️</div>
+  <div class="login-title">TRT9 Estudos</div>
+  <div class="login-sub">Analista Judiciário · Área Judiciária<br>Dados sincronizados em qualquer dispositivo</div>
+  <button class="btn-google" onclick="loginGoogle()">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
+    Entrar com Google
+  </button>
+</div>
+
+<div id="appScreen" style="display:none">
+<div class="nav">
+  <div class="nav-top">
+    <div><div class="nav-title">TRT9 — Painel</div><div class="nav-sub">Analista Judiciário · FCC</div></div>
+    <div class="nav-right">
+      <div class="nav-user" id="navUser"></div>
+      <div class="nav-actions">
+        <button class="btn-nav btn-export" onclick="exportarJSON()">⬇ Export</button>
+        <label class="btn-nav btn-import-label">⬆ Import<input type="file" accept=".json" onchange="importarJSON(event)" style="display:none"></label>
+        <button class="btn-nav btn-logout" onclick="logout()">Sair</button>
+      </div>
+    </div>
+  </div>
+  <div class="sync-bar" id="syncBar">Sincronizando...</div>
+</div>
+<nav class="bottom-nav">
+  <button class="tab-nav active" onclick="showPage('dashboard',this)"><span class="tab-icon">📊</span>Painel</button>
+  <button class="tab-nav" onclick="showPage('sessao',this)"><span class="tab-icon">✏️</span>Registrar</button>
+  <button class="tab-nav" onclick="showPage('progresso',this)"><span class="tab-icon">📚</span>Progresso</button>
+  <button class="tab-nav" onclick="showPage('revisoes',this)"><span class="tab-icon">🔁</span>Revisões</button>
+  <button class="tab-nav" onclick="showPage('erros',this)"><span class="tab-icon">🚨</span>Erros</button>
+  <button class="tab-nav" onclick="showPage('historico',this)"><span class="tab-icon">📋</span>Histórico</button>
+  <button class="tab-nav" onclick="showPage('probabilidade',this)"><span class="tab-icon">📈</span>Prob.</button>
+</nav>
+
+<div class="page active" id="page-dashboard">
+  <div class="card" style="background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);">
+    <div class="dash-hero">
+      <div class="dash-ring-wrap">
+        <svg class="dash-ring-svg" viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="75" fill="none" stroke="var(--border)" stroke-width="12"/>
+          <circle id="dash-ring-fill" cx="90" cy="90" r="75" fill="none"
+            stroke="var(--accent)" stroke-width="12" stroke-linecap="round"
+            stroke-dasharray="0 471.2" transform="rotate(-90 90 90)"
+            style="transition:stroke-dasharray .7s cubic-bezier(.4,0,.2,1)"/>
+        </svg>
+        <div class="dash-ring-center">
+          <div class="dash-ring-pct" id="s-prog">0%</div>
+          <div class="dash-ring-lbl">cronograma</div>
+        </div>
+      </div>
+      <div class="dash-kpi-row">
+        <div class="kpi-box"><div class="kpi-val" id="s-aulas">0</div><div class="kpi-lbl">Aulas</div></div>
+        <div class="kpi-box"><div class="kpi-val" id="s-questoes">0</div><div class="kpi-lbl">Questões</div></div>
+        <div class="kpi-box"><div class="kpi-val" id="s-acerto">—</div><div class="kpi-lbl">Acerto</div></div>
+        <div class="kpi-box"><div class="kpi-val" id="s-dias">0</div><div class="kpi-lbl">Dias</div></div>
+        <div class="kpi-box"><div class="kpi-val" id="s-horas">0h</div><div class="kpi-lbl">Horas</div></div>
+        <div class="kpi-box"><div class="kpi-val" id="s-prob-dash">—</div><div class="kpi-lbl">Prob. conv.</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="s2col">
+    <div class="card">
+      <div class="card-title">🗓 Últimos 14 dias</div>
+      <div id="dash-heatmap"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Alertas (Revisões)</div>
+      <div id="dash-rev" style="margin-bottom:4px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🎯 Meta Semanal de Horas</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div class="field" style="margin:0;flex:1">
+        <label>Meta (horas/semana)</label>
+        <input type="number" id="meta-semanal-input" min="1" max="80" value="30" step="0.5" style="text-align:center">
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="atualizarMeta()" style="margin-top:18px;white-space:nowrap">Salvar meta</button>
+    </div>
+    <div id="meta-semanal-display"></div>
+    <div style="font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center">Horas contam aulas (0,5h) + páginas (40/h) + questões (2 min/q)</div>
+  </div>
+  <div class="card">
+    <div class="card-title">📚 Progresso por disciplina</div>
+    <div id="dash-disc"></div>
+  </div>
+</div>
+
+<div class="page" id="page-sessao">
+  <div class="card">
+    <div class="card-title">✏️ Registrar Sessão de Estudo</div>
+    <div class="form-grid">
+      <div class="field"><label>Data do estudo</label><input type="date" id="f-data"></div>
+      <div class="field"><label>Disciplina</label><select id="f-disc" onchange="popularSubs('f-sub','f-disc')"><option value="">Selecione...</option></select></div>
+      <div class="field field-full"><label>Subtópico (edital)</label><select id="f-sub" onchange="mostrarInfoSub()"><option value="">Selecione a disciplina primeiro</option></select></div>
+      <div class="field field-full" id="sub-info-box" style="display:none">
+        <div id="sub-info-content" style="background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:.7rem;color:var(--text2);line-height:1.7;"></div>
+      </div>
+      <div class="field"><label>Aulas assistidas</label><input type="number" id="f-aulas" min="0" max="30" placeholder="0"></div>
+      <div class="field"><label>Total de aulas do subtópico <span style="color:var(--accent);font-size:.55rem">★ informe na 1ª vez</span></label><input type="number" id="f-aulastotal" min="0" placeholder="Deixe em branco se já informou"></div>
+      <div class="field"><label>Páginas lidas <span style="color:var(--muted);font-size:.55rem">(40 págs = 1h | 1q = 2m)</span></label><input type="number" id="f-paginas" min="0" placeholder="0"></div>
+      <div class="field"><label>Questões feitas</label><input type="number" id="f-q" min="0" placeholder="0"></div>
+      <div class="field"><label>Questões corretas</label><input type="number" id="f-ac" min="0" placeholder="0"></div>
+      <div class="field field-full"><label>Observações / dúvidas</label><input type="text" id="f-obs" placeholder="Ex: dificuldade com prescrição intercorrente"></div>
+    </div>
+    <button class="btn" onclick="registrarSessao()">Registrar sessão →</button>
+  </div>
+</div>
+
+<div class="page" id="page-progresso">
+  <div class="card">
+    <div class="card-title">📚 Progresso por Disciplina e Subtópico</div>
+    <div class="prog-legenda">
+      <div class="prog-legenda-item"><span class="sub-status sub-status-ok">✅ concluído</span> Subtópico finalizado — revisão agendada</div>
+      <div class="prog-legenda-item"><span class="sub-status sub-status-warn">⏳ em andamento</span> Total informado, ainda não concluiu</div>
+      <div class="prog-legenda-item"><span class="sub-status sub-status-notdef">⚠️ sem total</span> Estudado mas sem total de aulas definido</div>
+      <div class="prog-legenda-item"><span class="sub-status sub-status-none">○ não iniciado</span> Nenhuma sessão registrada</div>
+    </div>
+    <div id="prog-list"></div>
+  </div>
+</div>
+
+<div class="page" id="page-revisoes">
+  <div class="card">
+    <div class="card-title">🔁 Revisões Espaçadas</div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:10px">Revisão = 30 questões + erros. Não releia passivamente.</p>
+    <div id="rev-list"></div>
+  </div>
+</div>
+
+<div class="page" id="page-erros">
+  <div class="card">
+    <div class="card-title">📚 Meus Cadernos de Erros (Google Drive)</div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:14px">
+      📁 Estudos para concurso / 📚 Cadernos de Erros
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <a href="https://docs.google.com/document/d/18E5GfiH75aKi0W5S9GLPpy8iVpuLZh53YgNJyBEVYBE/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Constitucional
+      </a>
+      <a href="https://docs.google.com/document/d/1npGxbmtOcx2C5HUPc_nMiLSHg16FI-aM4nUxZ1BCJYQ/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito do Trabalho
+      </a>
+      <a href="https://docs.google.com/document/d/1vZNmy4TqdJV8Tgo2600GfAhP851y8vmN8Y3-ShaamK8/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Dir. Processual do Trabalho
+      </a>
+      <a href="https://docs.google.com/document/d/1kMPvkZKQQctq_l5pCuBjptaO29eAiliWnu1uaQmaxO4/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Administrativo
+      </a>
+      <a href="https://docs.google.com/document/d/12vXJGNWAW6I1wKhkrfzoI7LehlRVjPeu-s_yA8y9PX8/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Civil
+      </a>
+      <a href="https://docs.google.com/document/d/1Au03pdoSZz36NTUh8LBV21Ej0N_PEgmO9STnxlybYA4/edit" target="_blank" class="btn btn-ghost" style="text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <span style="font-size:1.2rem">📘</span> 🚨 Erros — Direito Processual Civil
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-historico">
+  <div class="card">
+    <div class="card-title">📋 Histórico de Sessões</div>
+    <div class="filtros" id="hist-filtros"></div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<div class="page" id="page-probabilidade">
+  <div class="prob-2col">
+    <div class="card">
+      <div class="card-title">📍 Situação Atual</div>
+      <div class="prob-gauge-wrap">
+        <svg class="prob-gauge-svg" viewBox="0 0 200 110" id="gauge-atual-svg">
+          <path d="M20,100 A80,80 0 0,1 180,100" stroke="var(--border)" stroke-width="14" fill="none" stroke-linecap="round"/>
+          <path id="gauge-atual-arc" d="M20,100 A80,80 0 0,1 180,100" stroke="var(--danger)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="0 251.2"/>
+          <text id="gauge-atual-val" class="prob-gauge-val" x="100" y="90" fill="var(--accent)">—</text>
+          <text class="prob-gauge-lbl" x="100" y="108">probabilidade hoje</text>
+        </svg>
+      </div>
+      <div class="prob-diag" id="diag-atual">Calculando...</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 Projeção na Prova</div>
+      <div class="prob-gauge-wrap">
+        <svg class="prob-gauge-svg" viewBox="0 0 200 110" id="gauge-proj-svg">
+          <path d="M20,100 A80,80 0 0,1 180,100" stroke="var(--border)" stroke-width="14" fill="none" stroke-linecap="round"/>
+          <path id="gauge-proj-arc" d="M20,100 A80,80 0 0,1 180,100" stroke="var(--accent)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="0 251.2"/>
+          <text id="gauge-proj-val" class="prob-gauge-val" x="100" y="90" fill="var(--accent)">—</text>
+          <text class="prob-gauge-lbl" x="100" y="108">projeção ao fim do cronograma</text>
+        </svg>
+      </div>
+      <div class="prob-diag" id="diag-proj">Calculando...</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Acerto por Disciplina — Atual vs. Projetado</div>
+    <div style="overflow-x:auto">
+      <table class="prob-disc-table" id="prob-disc-table">
+        <thead><tr><th>Disciplina</th><th>Hoje</th><th>Projetado</th><th>Teto</th><th>Peso prova</th><th>Impacto</th></tr></thead>
+        <tbody id="prob-disc-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🚀 Maiores Alavancadores — onde focar</div>
+    <div id="prob-alavancas"></div>
+    <div class="prob-aviso">⚠️ Margem de incerteza do modelo: ±15 p.p. Os parâmetros históricos podem não refletir o próximo concurso. Use como bússola, não como previsão.</div>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyAQdnjWOipn3Jjx07IiB8wkAmTuk3I1Q-8",
+  authDomain:"trt9-estudos.firebaseapp.com",
+  projectId:"trt9-estudos",
+  storageBucket:"trt9-estudos.firebasestorage.app",
+  messagingSenderId:"135951266572",
+  appId:"1:135951266572:web:748c821b1303abdf940f29"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+document.getElementById('loadingScreen').style.display='flex';
+document.getElementById('loginScreen').style.display='none';
+document.getElementById('appScreen').style.display='none';
+
+let unsubscribe=null;
+let syncIniciado=false;
+
+function mostrarApp(user){
+  document.getElementById('loadingScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('navUser').textContent=user.displayName||user.email;
+  if(!syncIniciado){ syncIniciado=true; iniciarSync(user.uid); }
+}
+
+function mostrarLogin(){
+  document.getElementById('loadingScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appScreen').style.display='none';
+  syncIniciado=false;
+  if(unsubscribe){ unsubscribe(); unsubscribe=null; }
+}
+
+onAuthStateChanged(auth, user => {
+  if(user){ mostrarApp(user); }
+  else { mostrarLogin(); }
+});
+
+window.loginGoogle = async function(){
+  try{
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  }catch(e){
+    if(e.code !== 'auth/popup-closed-by-user'){
+      alert('Erro ao fazer login: ' + e.message);
+    }
+  }
+};
+
+window.logout=async function(){
+  syncIniciado=false;
+  if(unsubscribe){ unsubscribe(); unsubscribe=null; }
+  await signOut(auth);
+};
+
+let userId=null;
+function iniciarSync(uid){
+  userId=uid;
+  setSyncStatus('Sincronizando...');
+  unsubscribe=onSnapshot(doc(db,'usuarios',uid),snap=>{
+    if(snap.exists()){
+      const d=snap.data();
+      window._d.sessoes=d.sessoes||[];
+      window._d.revisoes=d.revisoes||[];
+      window._d.subTotais=d.subTotais||{};
+      window._d.metaSemanal=d.metaSemanal||30;
+      const mEl=document.getElementById('meta-semanal-input');
+      if(mEl)mEl.value=window._d.metaSemanal;
+    }
+    setSyncStatus('✓ Sincronizado',true);
+    render();
+  },()=>setSyncStatus('⚠ Erro de conexão',false,true));
+}
+
+window._salvar=async function(){
+  if(!userId)return;
+  try{
+    await setDoc(doc(db,'usuarios',userId),window._d,{merge:true});
+    setSyncStatus('✓ Salvo',true);
+  }catch(e){setSyncStatus('⚠ Erro ao salvar',false,true);}
+};
+
+function setSyncStatus(msg,ok=false,err=false){
+  const el=document.getElementById('syncBar');
+  el.textContent=msg;
+  el.className='sync-bar'+(ok?' sync-ok':err?' sync-err':'');
+}
+</script>
+
+<script>
+const DISC={
+  "Direito do Trabalho":{total:134,prior:"ALTA",cor:"#e07a52",subs:["Princípios e fontes do Direito do Trabalho","Direitos constitucionais — art. 7º CF","Relação de emprego — requisitos e distinção","Trabalho autônomo, eventual, temporário, avulso e intermitente","Empregado e empregador — conceito e poderes","Grupo econômico e sucessão de empregadores","CTPS — emissão e anotações","Contrato individual — conceito e classificação","Alteração do contrato — jus variandi","Suspensão e interrupção do contrato","Rescisão — justas causas e despedida indireta","Dispensa arbitrária, coletiva e culpa recíproca","Aviso prévio","Estabilidade e garantias provisórias","Jornada de trabalho e jornada in itinere","Descansos — intervalo e DSR","Trabalho noturno, extraordinário e compensação","Salário mínimo","Férias — direito, concessão e remuneração","Salário e remuneração — composição","13º salário","Equiparação salarial e desvio de função","FGTS","Prescrição e decadência trabalhista","Segurança e medicina — CIPA e EPI","Atividades insalubres e perigosas","Proteção ao trabalho da mulher, gestante e menor","Estabilidade da gestante e licença-maternidade","Direito coletivo — liberdade sindical","Convenções e acordos coletivos","Direito de greve","Teletrabalho — Lei 13.467/2017","Dano moral e assédio","Responsabilidade civil e acidentes","Reforma Trabalhista — Lei 13.467/2017","Súmulas e OJs do TST","Súmulas vinculantes do STF"]},
+  "Dir. Processual do Trabalho":{total:94,prior:"MÁXIMA",cor:"#e05252",subs:["Organização da Justiça do Trabalho","Competência — Varas, TRTs e TST","Serviços auxiliares","Peritos e honorários periciais","Ministério Público do Trabalho","Princípios gerais do processo trabalhista","Prescrição, decadência e prescrição intercorrente","Atos, termos e prazos processuais","Custas, emolumentos e isenções","Partes e jus postulandi","Litisconsórcio e assistência judiciária","Honorários advocatícios","Nulidades e exceções","Responsabilidade por dano processual","Conflitos de competência","Audiências — conciliação, instrução e julgamento","Revelia e confissão","Provas no processo do trabalho","Decisão e eficácia","Dissídios individuais","Procedimento ordinário e sumaríssimo","Inquérito para apuração de falta grave","Ação rescisória trabalhista","Mandado de segurança trabalhista","Ação civil pública","Incidente de desconsideração da personalidade jurídica","Homologação de acordo extrajudicial","Liquidação da sentença","Dissídios coletivos","Execução provisória e definitiva","Execução contra Fazenda Pública e massa falida","Penhora e impenhorabilidade","Seguro-fiança e seguro-garantia","Embargos à execução","Embargos de terceiros","Arrematação e custas","Recursos no processo do trabalho","Processo Judicial Eletrônico","Resoluções CSJT 174/2016 e 288/2021","Súmulas e OJs do TST","Lei 6.858/80 e Lei 5.584/70"]},
+  "Direito Civil":{total:231,prior:"ALTA",cor:"#e07a52",subs:["LINDB","Eficácia e interpretação da lei","Pessoas naturais — personalidade e capacidade","Direitos da personalidade","Pessoas jurídicas","Domicílio civil","Bens — classificação","Negócios jurídicos","Atos lícitos e ilícitos","Prescrição e decadência","Obrigações — disposições gerais","Obrigações de dar, fazer e não fazer","Adimplemento e extinção","Inadimplemento — mora e perdas e danos","Contratos — disposições gerais","Compra e venda","Prestação de serviço","Mandato","Transação","Empreitada","Responsabilidade civil","Penhor, hipoteca e anticrese"]},
+  "Direito Processual Civil":{total:147,prior:"ALTA",cor:"#e07a52",subs:["Princípios gerais — CPC/2015","Jurisdição","Competência","Conflito de competência","Direito de ação","Conexão e continência","Pressupostos processuais","Partes e procuradores","Despesas e honorários","Litisconsórcio","Intervenção de terceiros","Desconsideração da personalidade jurídica","Amicus curiae","Poderes do juiz","Impedimento e suspeição","Auxiliares da Justiça","MP, Advocacia Pública e Defensoria","Fazenda Pública em juízo","Atos processuais — prazos","Citação e intimações","Nulidades","Tutela provisória","Formação e extinção do processo","Petição inicial","Contestação e revelia","Saneamento","Provas","Sentença","Coisa julgada","Liquidação","Cumprimento de sentença","Recursos — disposições gerais","Repercussão geral e repetitivos","Execução — princípios","Execução contra Fazenda Pública","Penhora e expropriação","Embargos à execução","Procedimentos especiais","Controle de constitucionalidade","IRDR e reclamação","Ação rescisória"]},
+  "Direito Constitucional":{total:151,prior:"MÁXIMA",cor:"#e05252",subs:["Princípios fundamentais","Direitos individuais e coletivos","Direitos sociais","Direitos de nacionalidade","Direitos políticos","HC, HD, MS, MI e Ação Popular","Ação civil pública","Controle difuso","Controle concentrado — ADI, ADC, ADPF","Súmula vinculante e repercussão geral","Organização político-administrativa","Competências da União, Estados e Municípios","Intervenção federal","Administração Pública","Servidores públicos","Poder Executivo","Poder Legislativo","Processo legislativo","Fiscalização contábil e orçamentária","Poder Judiciário","STF e CNJ","STJ e TRFs","Tribunais do Trabalho — TST, TRTs e CSJT","Funções essenciais à Justiça","Ordem econômica","Finanças públicas","Ordem social"]},
+  "Direito Administrativo":{total:85,prior:"MÁXIMA",cor:"#e05252",subs:["Princípios da Administração Pública","Poder hierárquico e disciplinar","Poder regulamentar e de polícia","Ato administrativo — conceito e atributos","Anulação, revogação e convalidação","Discricionariedade e vinculação","Administração direta e indireta","Autarquias, fundações, EP e SEM","Consórcios públicos","Órgãos públicos","Servidores — cargo, emprego e função","Lei 8.112/90 — provimento e vacância","Lei 8.112/90 — direitos e licenças","Lei 8.112/90 — regime disciplinar e PAD","Lei 9.784/99 — processo administrativo","Controle administrativo e judicial","Responsabilidade do Estado","Improbidade — Lei 8.429/92","Lei 11.416/2006","Licitações — Lei 14.133/2021","Serviços públicos","Delegação de serviço público","Bens públicos","Intervenção na propriedade","Terceiro Setor"]},
+  "Língua Portuguesa":{total:71,prior:"MANUTENÇÃO",cor:"#4aae6e",subs:["Ortografia","Acentuação","Pontuação","Crase","Flexão nominal e verbal","Pronomes","Coesão e coerência","Tempos e modos verbais","Concordância","Regência","Morfossintaxe","Coordenação e subordinação","Interpretação de textos","Tipos e gêneros textuais","Figuras de linguagem","Discurso direto e indireto","Redação dissertativo-argumentativa"]},
+  "Raciocínio Lógico-Matemático":{total:86,prior:"MANUTENÇÃO",cor:"#4aae6e",subs:["Números inteiros e racionais","Múltiplos e divisores","Frações","Razões e proporções","Regra de três","Porcentagem","Lógica — relações e dedução","Raciocínio verbal e matemático","Raciocínio sequencial","Formação de conceitos","Lógica proposicional"]}
+};
+const DNAMES=Object.keys(DISC);
+const TOTAL_G=DNAMES.reduce((a,d)=>a+DISC[d].total,0);
+
+window._d={sessoes:[],revisoes:[],subTotais:{}};
+
+function hoje(){return new Date().toISOString().slice(0,10);}
+function fmtD(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
+function diasAte(iso){return Math.round((new Date(iso)-new Date(hoje()))/86400000);}
+function sk(disc,sub){return(disc+'||'+sub).replace(/[^a-zA-Z0-9||]/g,'_');}
+
+function showToast(msg,tipo='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=tipo==='err'?'var(--danger)':tipo==='warn'?'var(--warn)':'var(--success)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+function popularTodosSelects(){
+  ['f-disc'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    sel.innerHTML='<option value="">Selecione...</option>';
+    DNAMES.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
+  });
+  document.getElementById('f-data').value=hoje();
+}
+
+window.popularSubs=function(targetId,sourceId){
+  const disc=document.getElementById(sourceId).value;
+  const sel=document.getElementById(targetId);
+  sel.innerHTML='<option value="">Selecione o subtópico</option>';
+  if(disc&&DISC[disc])DISC[disc].subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  document.getElementById('sub-info-box').style.display='none';
+};
+
+// ── Mostra info do subtópico selecionado no formulário ──
+window.mostrarInfoSub=function(){
+  const disc=document.getElementById('f-disc').value;
+  const sub=document.getElementById('f-sub').value;
+  const box=document.getElementById('sub-info-box');
+  const content=document.getElementById('sub-info-content');
+  if(!disc||!sub){box.style.display='none';return;}
+  const key=sk(disc,sub);
+  const totalDefinido=window._d.subTotais[key]||0;
+  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
+  const temRevisao=window._d.revisoes.some(r=>r.disc===disc&&r.sub===sub);
+  // Preenche campo total automaticamente se já existe
+  const fAulasTotal=document.getElementById('f-aulastotal');
+  if(totalDefinido>0)fAulasTotal.placeholder='Total já definido: '+totalDefinido+' aulas';
+  else fAulasTotal.placeholder='Informe o total de aulas';
+  let html='';
+  if(aulasFeitas===0&&totalDefinido===0){
+    html='<span style="color:var(--muted)">○</span> <strong>Não iniciado</strong> — informe o total de aulas na 1ª sessão.';
+  } else if(totalDefinido===0){
+    html='<span style="color:var(--accent)">⚠️</span> <strong>'+aulasFeitas+' aulas registradas</strong>, mas o total não foi definido. Informe o total para ativar o agendamento automático de revisões.';
+  } else if(aulasFeitas>=totalDefinido){
+    html='<span style="color:var(--success)">✅</span> <strong>Concluído!</strong> '+aulasFeitas+'/'+totalDefinido+' aulas.'+(temRevisao?' Revisões agendadas.':' Sessão extra sem novo agendamento.');
+  } else {
+    const faltam=totalDefinido-aulasFeitas;
+    const pct=Math.round(aulasFeitas/totalDefinido*100);
+    html='<span style="color:var(--accent)">⏳</span> <strong>Em andamento:</strong> '+aulasFeitas+'/'+totalDefinido+' aulas ('+pct+'%) — faltam <strong>'+faltam+'</strong> para agendar revisões.';
+  }
+  content.innerHTML=html;
+  box.style.display='block';
+};
+
+// ── Registrar sessão com lógica de agendamento por conclusão ──
+window.registrarSessao=async function(){
+  const data=document.getElementById('f-data').value||hoje();
+  const disc=document.getElementById('f-disc').value;
+  const sub=document.getElementById('f-sub').value;
+  const aulas=parseInt(document.getElementById('f-aulas').value)||0;
+  const aulasTotal=parseInt(document.getElementById('f-aulastotal').value)||0;
+  const paginas=parseInt(document.getElementById('f-paginas').value)||0;
+  const q=parseInt(document.getElementById('f-q').value)||0;
+  const ac=parseInt(document.getElementById('f-ac').value)||0;
+  const obs=document.getElementById('f-obs').value.trim();
+  if(!disc){showToast('Selecione a disciplina','err');return;}
+  if(!sub){showToast('Selecione o subtópico','err');return;}
+  if(aulas===0&&q===0&&paginas===0){showToast('Informe aulas, páginas ou questões','err');return;}
+  if(ac>q){showToast('Acertos > questões','err');return;}
+
+  // Salva total de aulas se informado
+  if(aulasTotal>0) window._d.subTotais[sk(disc,sub)]=aulasTotal;
+
+  // Registra a sessão
+  window._d.sessoes.unshift({id:Date.now(),data,disc,sub,aulas,paginas,q,ac,obs});
+
+  // ── Lógica de agendamento de revisões ──
+  const totalDefinido=window._d.subTotais[sk(disc,sub)]||0;
+  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
+  const jaTemRevisao=window._d.revisoes.some(r=>r.disc===disc&&r.sub===sub);
+
+  let toastMsg='✅ Sessão registrada!';
+
+  if(totalDefinido>0){
+    // Tem total definido: só agenda ao concluir
+    if(aulasFeitas>=totalDefinido && !jaTemRevisao){
+      agendarRevisoes(disc,sub,data);
+      toastMsg='🎯 Subtópico concluído! Revisões agendadas (+7, +30, +90 dias)';
+    } else if(aulasFeitas>=totalDefinido && jaTemRevisao){
+      toastMsg='✅ Sessão registrada! (revisões já agendadas anteriormente)';
+    } else {
+      const faltam=totalDefinido-aulasFeitas;
+      toastMsg='✅ Registrado! Faltam '+faltam+' aulas para agendar revisões.';
+    }
+  } else if(aulas>0){
+    // Sem total definido: agenda normalmente (comportamento legado)
+    if(!jaTemRevisao) agendarRevisoes(disc,sub,data);
+    toastMsg='✅ Sessão registrada! (dica: informe o total de aulas para agendamento preciso)';
+  } else {
+    toastMsg='✅ Sessão registrada!';
+  }
+
+  // Limpa formulário
+  ['f-disc','f-sub'].forEach(id=>document.getElementById(id).value='');
+  ['f-aulas','f-aulastotal','f-paginas','f-q','f-ac','f-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-data').value=hoje();
+  document.getElementById('f-sub').innerHTML='<option value="">Selecione a disciplina primeiro</option>';
+  document.getElementById('f-aulastotal').placeholder='Deixe em branco se já informou';
+  document.getElementById('sub-info-box').style.display='none';
+
+  await window._salvar();
+  showToast(toastMsg);
+  render();
+};
+
+function agendarRevisoes(disc,sub,dataBase){
+  [[7,'R1 +7 dias'],[30,'R2 +30 dias'],[90,'R3 +90 dias']].forEach(([off,lbl])=>{
+    const d=new Date(dataBase);d.setDate(d.getDate()+off);
+    const dataRev=d.toISOString().slice(0,10);
+    if(!window._d.revisoes.find(r=>r.disc===disc&&r.sub===sub&&r.label===lbl))
+      window._d.revisoes.push({id:Date.now()+off,disc,sub,label:lbl,data:dataRev,feita:false});
+  });
+}
+
+window.marcarRevisao=async function(id){
+  const r=window._d.revisoes.find(r=>r.id===id);
+  if(r){r.feita=true;await window._salvar();render();showToast('✅ Revisão concluída!');}
+};
+
+window.gerarICS=function(id){
+  const r=window._d.revisoes.find(r=>r.id===id);if(!r)return;
+  const dtStr=r.data.replace(/-/g,'');
+  const d=new Date(r.data);d.setDate(d.getDate()+1);
+  const dtEnd=d.toISOString().slice(0,10).replace(/-/g,'');
+  const ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TRT9//PT\r\nBEGIN:VEVENT\r\nUID:trt9-'+id+'@estudos\r\nSUMMARY:📚 '+r.label+' — '+r.disc+'\r\nDESCRIPTION:Subtópico: '+r.sub+'\\nRevisão = 30 questões + erros.\r\nDTSTART;VALUE=DATE:'+dtStr+'\r\nDTEND;VALUE=DATE:'+dtEnd+'\r\nBEGIN:VALARM\r\nTRIGGER:-PT8H\r\nACTION:DISPLAY\r\nDESCRIPTION:Revisar: '+r.disc+'\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR';
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='revisao_'+r.disc.replace(/\s/g,'_')+'_'+r.data+'.ics';a.click();
+  URL.revokeObjectURL(url);
+  showToast('📅 Baixado — abra para adicionar ao Calendário');
+};
+
+window.gerarICSLote=function(){
+  const p=window._d.revisoes.filter(r=>!r.feita);
+  if(p.length===0){showToast('Nenhuma revisão pendente','err');return;}
+  const evs=p.map(r=>{
+    const dtStr=r.data.replace(/-/g,'');
+    const d=new Date(r.data);d.setDate(d.getDate()+1);
+    const dtEnd=d.toISOString().slice(0,10).replace(/-/g,'');
+    return 'BEGIN:VEVENT\r\nUID:trt9-'+r.id+'@estudos\r\nSUMMARY:📚 '+r.label+' — '+r.disc+'\r\nDESCRIPTION:'+r.sub+'\r\nDTSTART;VALUE=DATE:'+dtStr+'\r\nDTEND;VALUE=DATE:'+dtEnd+'\r\nBEGIN:VALARM\r\nTRIGGER:-PT8H\r\nACTION:DISPLAY\r\nDESCRIPTION:Revisar: '+r.disc+'\r\nEND:VALARM\r\nEND:VEVENT';
+  }).join('\r\n');
+  const ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TRT9//PT\r\n'+evs+'\r\nEND:VCALENDAR';
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='todas_revisoes_trt9.ics';a.click();
+  URL.revokeObjectURL(url);
+  showToast('📅 '+p.length+' eventos baixados!');
+};
+
+window.deletarSessao=async function(id){window._d.sessoes=window._d.sessoes.filter(s=>s.id!==id);await window._salvar();render();showToast('Removido');};
+
+window.exportarJSON=function(){
+  const blob=new Blob([JSON.stringify({versao:4,exportadoEm:new Date().toISOString(),...window._d},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='trt9_dados_'+hoje()+'.json';a.click();URL.revokeObjectURL(url);showToast('✅ Exportado!');
+};
+window.importarJSON=async function(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{const d=JSON.parse(e.target.result);if(!d.sessoes)throw new Error();
+      window._d.sessoes=d.sessoes||[];window._d.revisoes=d.revisoes||[];window._d.subTotais=d.subTotais||{};
+      await window._salvar();render();showToast('✅ Importado!');
+    }catch{showToast('❌ Arquivo inválido','err');}
+  };
+  reader.readAsText(file);evt.target.value='';
+};
+
+function render(){renderStats();renderDash();renderProgresso();renderRevisoes();renderHistorico(histFiltro);}
+
+function renderStats(){
+  const d=window._d;
+  const tA=d.sessoes.reduce((a,s)=>a+s.aulas,0);
+  const tP=d.sessoes.reduce((a,s)=>a+(s.paginas||0),0);
+  const tQ=d.sessoes.reduce((a,s)=>a+(s.q||0),0);
+  const tAc=d.sessoes.reduce((a,s)=>a+(s.ac||0),0);
+  const dias=[...new Set(d.sessoes.map(s=>s.data))].length;
+  const hTotal = tA*0.5 + tP/40 + tQ*(2/60);
+  document.getElementById('s-aulas').textContent=tA;
+  document.getElementById('s-questoes').textContent=tQ;
+  document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
+  document.getElementById('s-dias').textContent=dias;
+  document.getElementById('s-horas').textContent=hTotal.toFixed(1)+'h';
+  document.getElementById('s-prog').textContent=Math.round(tA/TOTAL_G*100)+'%';
+  const pct=Math.min(100,Math.round(tA/TOTAL_G*100));
+  const circ=2*Math.PI*75;
+  const fill=pct/100*circ;
+  const ring=document.getElementById('dash-ring-fill');
+  if(ring)ring.setAttribute('stroke-dasharray',fill+' '+circ);
+  renderMetaSemanal(d,hTotal);
+}
+
+function renderMetaSemanal(d, hTotalGeral){
+  const metaEl=document.getElementById('meta-semanal-input');
+  const meta=metaEl?parseFloat(metaEl.value)||30:30;
+  const agora=new Date();
+  const diaSemana=agora.getDay()===0?6:agora.getDay()-1;
+  const seg=new Date(agora);seg.setDate(agora.getDate()-diaSemana);seg.setHours(0,0,0,0);
+  const semanaIso=[...Array(7)].map((_,i)=>{const dt=new Date(seg);dt.setDate(seg.getDate()+i);return dt.toISOString().slice(0,10);});
+  const sessoesSemana=d.sessoes.filter(s=>semanaIso.includes(s.data));
+  const hSemana=sessoesSemana.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0);
+  const pct=Math.min(100,hSemana/meta*100);
+  const faltam=Math.max(0,meta-hSemana);
+  const cor=pct>=100?'var(--success)':pct>=60?'var(--accent)':'var(--warn)';
+  const el=document.getElementById('meta-semanal-display');
+  if(el)el.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<div>' +
+        '<span style="font-family:var(--serif);font-size:1.7rem;font-weight:700;color:'+cor+'">'+hSemana.toFixed(1)+'h</span>' +
+        '<span style="font-size:.7rem;color:var(--muted)"> / '+meta+'h meta</span>' +
+      '</div>' +
+      '<div style="text-align:right;font-size:.65rem;color:var(--muted)">'+
+        (pct>=100?'<span style="color:var(--success);font-weight:600">✅ Meta atingida!</span>':'Faltam <strong style="color:'+cor+'">'+faltam.toFixed(1)+'h</strong>')+
+      '</div>' +
+    '</div>' +
+    '<div style="background:var(--border);border-radius:99px;height:8px;overflow:hidden;margin-bottom:10px">' +
+      '<div style="width:'+pct+'%;height:100%;background:'+cor+';border-radius:99px;transition:width .5s ease"></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:4px">' +
+      semanaIso.map((iso,i)=>{
+        const labels=['S','T','Q','Q','S','S','D'];
+        const h=sessoesSemana.filter(s=>s.data===iso).reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0);
+        const isHoje=iso===hoje();
+        const bc=h>0?(h>=4?'var(--success)':h>=2?'var(--accent)':'var(--surface3)'):'var(--border)';
+        const tc=h>0?'var(--text)':'var(--muted)';
+        return '<div style="flex:1;background:'+bc+';border:1px solid '+(isHoje?'var(--accent)':'transparent')+';border-radius:6px;padding:5px 2px;text-align:center">' +
+          '<div style="font-size:.5rem;color:var(--muted)">'+labels[i]+'</div>' +
+          '<div style="font-size:.6rem;color:'+tc+';font-weight:600;margin-top:2px">'+(h>0?h.toFixed(h<10?1:0)+'h':'·')+'</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+}
+
+window.atualizarMeta=async function(){
+  const metaEl=document.getElementById('meta-semanal-input');
+  const meta=parseFloat(metaEl.value)||30;
+  window._d.metaSemanal=meta;
+  await window._salvar();
+  renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0));
+  showToast('✅ Meta atualizada!');
+};
+
+function renderDash(){
+  const d=window._d;
+  const ru=d.revisoes.filter(r=>!r.feita&&diasAte(r.data)<=0).slice(0,4);
+  document.getElementById('dash-rev').innerHTML=ru.length===0?'<div class="empty">Sem revisões urgentes 🎉</div>'
+    :ru.map(r=>'<div class="rev-item urgente" style="margin-bottom:5px"><div><div style="font-size:.74rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted)">'+r.sub+' · '+r.label+'</div></div><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div>').join('');
+  document.getElementById('dash-disc').innerHTML='<div>'+DNAMES.map(nome=>{
+    const disc=DISC[nome];
+    const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
+    const pct=Math.min(100,Math.round(f/disc.total*100));
+    const bc=disc.prior==='MÁXIMA'?'b-max':disc.prior==='ALTA'?'b-alta':'b-man';
+    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:.71rem;margin-bottom:3px"><span>'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></span><span style="color:var(--muted)">'+f+'/'+disc.total+'</span></div><div class="bar"><div class="bar-fill" style="width:'+pct+'%;background:'+disc.cor+'"></div></div></div>';
+  }).join('')+'</div>';
+}
+
+window.toggleSub=function(id){document.getElementById(id).classList.toggle('open');};
+
+// ── Calcular status do subtópico para a tela de Progresso ──
+function statusSub(disc, sub){
+  const key=sk(disc,sub);
+  const totalDefinido=window._d.subTotais[key]||0;
+  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
+  if(aulasFeitas===0) return {tipo:'none', label:'○ não iniciado', aulas:0, total:totalDefinido};
+  if(totalDefinido===0) return {tipo:'notdef', label:'⚠️ sem total', aulas:aulasFeitas, total:0};
+  if(aulasFeitas>=totalDefinido) return {tipo:'ok', label:'✅ concluído', aulas:aulasFeitas, total:totalDefinido};
+  return {tipo:'warn', label:'⏳ '+aulasFeitas+'/'+totalDefinido, aulas:aulasFeitas, total:totalDefinido};
+}
+
+function renderProgresso(){
+  const d=window._d;
+  document.getElementById('prog-list').innerHTML=DNAMES.map(nome=>{
+    const disc=DISC[nome];
+    const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
+    const pct=Math.min(100,Math.round(f/disc.total*100));
+    const qT=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.q,0);
+    const acT=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.ac,0);
+    const acP=qT>0?Math.round(acT/qT*100)+'%':'—';
+    const bc=disc.prior==='MÁXIMA'?'b-max':disc.prior==='ALTA'?'b-alta':'b-man';
+    const domId='sub_'+nome.replace(/[\s.]/g,'_');
+
+    // Contar subtópicos por status
+    const statusCounts={ok:0,warn:0,notdef:0,none:0};
+    disc.subs.forEach(sub=>{ const st=statusSub(nome,sub); statusCounts[st.tipo]++; });
+    const resumoStatus=
+      (statusCounts.ok>0?'<span style="color:var(--success)">✅ '+statusCounts.ok+'</span> ':'') +
+      (statusCounts.warn>0?'<span style="color:var(--warn)">⏳ '+statusCounts.warn+'</span> ':'') +
+      (statusCounts.notdef>0?'<span style="color:var(--accent)">⚠️ '+statusCounts.notdef+'</span> ':'');
+
+    const subs=disc.subs.map(sub=>{
+      const st=statusSub(nome,sub);
+      const statusClass='sub-status sub-status-'+st.tipo;
+      const qS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.q,0);
+      const aS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
+      const aP=qS>0?Math.round(aS/qS*100)+'%':'—';
+      const corA=qS>0?(aS/qS>=.7?'var(--success)':aS/qS>=.5?'var(--accent)':'var(--danger)'):'var(--muted)';
+      // Barra de progresso do subtópico
+      const pS=st.total>0?Math.min(100,Math.round(st.aulas/st.total*100)):0;
+      return '<div class="sub-item">'+
+        '<div class="sub-name">'+sub+'</div>'+
+        '<span class="'+statusClass+'">'+st.label+'</span>'+
+        '<div class="sub-bw"><div class="sub-bar"><div class="sub-bar-fill" style="width:'+pS+'%;background:'+disc.cor+'"></div></div></div>'+
+        '<div style="font-size:.63rem;color:'+corA+';min-width:28px;text-align:right">'+aP+'</div>'+
+      '</div>';
+    }).join('');
+
+    const ringR=14;const ringC=2*Math.PI*ringR;const ringFill=(pct/100*ringC);
+    return '<div class="disc-item" onclick="toggleSub(\''+domId+'\')">'+
+      '<div class="disc-header">'+
+        '<div class="disc-name">'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></div>'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+          '<div class="disc-stats">'+f+'/'+disc.total+' · '+acP+'</div>'+
+          (resumoStatus?'<div style="font-size:.58rem">'+resumoStatus+'</div>':'') +
+          '<svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="'+ringR+'" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="'+ringR+'" fill="none" stroke="'+disc.cor+'" stroke-width="3" stroke-linecap="round" stroke-dasharray="'+ringFill+' '+ringC+'" transform="rotate(-90 17 17)"/><text x="17" y="21" text-anchor="middle" font-size="7" fill="'+disc.cor+'" font-family="var(--mono)">'+pct+'</text></svg>'+
+        '</div>'+
+      '</div>'+
+      '<div class="bar"><div class="bar-fill" style="width:'+pct+'%;background:'+disc.cor+'"></div></div>'+
+      '<div class="sub-list" id="'+domId+'">'+subs+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function renderRevisoes(){
+  const p=window._d.revisoes.filter(r=>!r.feita).sort((a,b)=>a.data.localeCompare(b.data));
+  const container=document.getElementById('rev-list');
+  if(p.length===0){container.innerHTML='<div class="empty">Nenhuma revisão pendente 🎉</div>';return;}
+  const btnLote='<button class="btn btn-ghost" onclick="gerarICSLote()" style="margin-bottom:10px;font-size:.72rem">📅 Baixar todas as revisões para o Calendário (.ics)</button>';
+  container.innerHTML=btnLote+p.slice(0,30).map(r=>{
+    const diff=diasAte(r.data);let tc,tt,ic='';
+    if(diff<0){tc='t-urgente';tt=Math.abs(diff)+'d atrasada';ic='urgente';}
+    else if(diff===0){tc='t-hoje';tt='Hoje!';ic='hoje';}
+    else{tc='t-proxima';tt='em '+diff+'d';}
+    return '<div class="rev-item '+ic+'"><div style="flex:1;min-width:0"><div style="font-size:.76rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted);margin-top:1px">'+r.sub+' · '+r.label+' · '+fmtD(r.data)+'</div></div><div class="rev-actions"><span class="rev-tag '+tc+'">'+tt+'</span><button class="btn-ics" onclick="gerarICS('+r.id+')">📅</button><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div></div>';
+  }).join('');
+}
+
+let histFiltro='todos';
+function renderHistFiltros(){
+  const opts=['todos',...DNAMES];
+  document.getElementById('hist-filtros').innerHTML=opts.map(o=>'<button class="filtro-btn'+(histFiltro===o?' active':'')+'" onclick="setHistF(\''+o+'\')">'+( o==='todos'?'Todas':o.split(' ').slice(-1)[0])+'</button>').join('');
+}
+window.setHistF=function(f){histFiltro=f;renderHistorico(f);};
+
+function renderHistorico(filtro){
+  renderHistFiltros();
+  let lista=filtro==='todos'?window._d.sessoes:window._d.sessoes.filter(s=>s.disc===filtro);
+  if(lista.length===0){document.getElementById('hist-list').innerHTML='<div class="empty">Nenhuma sessão ainda.</div>';return;}
+  document.getElementById('hist-list').innerHTML=lista.slice(0,60).map(s=>{
+    const pct=s.q>0?Math.round(s.ac/s.q*100):null;
+    const cls=pct===null?'':pct>=70?'acerto-bom':pct>=50?'acerto-ok':'acerto-ruim';
+    // Status do subtópico no momento do registro
+    const key=sk(s.disc,s.sub);
+    const totalDef=window._d.subTotais[key]||0;
+    const aulasAcc=window._d.sessoes.filter(x=>x.disc===s.disc&&x.sub===s.sub).reduce((a,x)=>a+x.aulas,0);
+    const subTag=totalDef>0?'<span style="font-size:.6rem;color:var(--muted)"> · '+Math.min(aulasAcc,totalDef)+'/'+totalDef+'aul</span>':'';
+    return '<div class="hist-item"><div class="hist-top"><span class="hist-disc">'+s.disc+'</span><div style="display:flex;align-items:center;gap:6px"><span class="hist-date">'+fmtD(s.data)+'</span><button class="btn btn-sm btn-danger" onclick="deletarSessao('+s.id+')">✕</button></div></div><div class="hist-sub">'+s.sub+subTag+'</div><div class="hist-nums"><span>'+s.aulas+'aul</span>'+(s.paginas?'<span>'+s.paginas+'págs</span>':'')+'<span>'+s.q+'q</span>'+(pct!==null?'<span class="'+cls+'">'+pct+'% ('+s.ac+'/'+s.q+')</span>':'')+(s.obs?'<span style="color:var(--muted)">📝 '+s.obs+'</span>':'')+'</div></div>';
+  }).join('');
+}
+
+window.showPage=function(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-nav').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  render();
+  if(id==='probabilidade' && window.renderProbabilidade) window.renderProbabilidade();
+};
+
+popularTodosSelects();
+
+
+// ═══════════════════════════════════════════════════════
+// MÓDULO DE PROBABILIDADE DE CONVOCAÇÃO — TRT9
+// ═══════════════════════════════════════════════════════
+
+const PROB_CONFIG = {
+  questoesPorDisc: {
+    "Direito do Trabalho": 10,
+    "Dir. Processual do Trabalho": 10,
+    "Direito Civil": 5,
+    "Direito Processual Civil": 5,
+    "Direito Constitucional": 5,
+    "Direito Administrativo": 5,
+    "Língua Portuguesa": 14,
+    "Raciocínio Lógico-Matemático": 6
+  },
+  bloco: {
+    "Direito do Trabalho": "esp",
+    "Dir. Processual do Trabalho": "esp",
+    "Direito Civil": "esp",
+    "Direito Processual Civil": "esp",
+    "Direito Constitucional": "esp",
+    "Direito Administrativo": "esp",
+    "Língua Portuguesa": "ger",
+    "Raciocínio Lógico-Matemático": "ger"
+  },
+  teto: {
+    "Direito do Trabalho": 0.78,
+    "Dir. Processual do Trabalho": 0.75,
+    "Direito Civil": 0.76,
+    "Direito Processual Civil": 0.74,
+    "Direito Constitucional": 0.72,
+    "Direito Administrativo": 0.75,
+    "Língua Portuguesa": 0.85,
+    "Raciocínio Lógico-Matemático": 0.97
+  },
+  horasPlanejadas: {
+    "Direito do Trabalho": 75,
+    "Dir. Processual do Trabalho": 60,
+    "Direito Civil": 60,
+    "Direito Processual Civil": 114,
+    "Direito Constitucional": 72,
+    "Direito Administrativo": 162,
+    "Língua Portuguesa": 36,
+    "Raciocínio Lógico-Matemático": 15
+  },
+  defaultEsp: 0.20,
+  defaultGer: 0.80,
+  mediaGrupoEsp: 0.60,
+  dpGrupoEsp: 0.11,
+  mediaGrupoGer: 0.68,
+  dpGrupoGer: 0.12,
+  minQSub: 10,
+  k: 0.025
+};
+
+function acertoSubAjustado(disc, sub, sessoes) {
+  const qSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.q, 0);
+  const acSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.ac, 0);
+  const isGer = PROB_CONFIG.bloco[disc] === 'ger';
+  const def = isGer ? PROB_CONFIG.defaultGer : PROB_CONFIG.defaultEsp;
+  if (qSub === 0) return def;
+  const pesoReal = Math.min(qSub, PROB_CONFIG.minQSub) / PROB_CONFIG.minQSub;
+  const acertoReal = acSub / qSub;
+  return pesoReal * acertoReal + (1 - pesoReal) * def;
+}
+
+function acertoDiscAtual(disc, sessoes) {
+  const subs = DISC[disc] ? DISC[disc].subs : [];
+  let totalQ = 0, somaAcerto = 0;
+  const isGer = PROB_CONFIG.bloco[disc] === 'ger';
+  const def = isGer ? PROB_CONFIG.defaultGer : PROB_CONFIG.defaultEsp;
+  for (const sub of subs) {
+    const qSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.q, 0);
+    const pesoReal = Math.min(qSub, PROB_CONFIG.minQSub) / PROB_CONFIG.minQSub;
+    const acSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.ac, 0);
+    const acertoReal = qSub > 0 ? acSub / qSub : 0;
+    const acAjustado = pesoReal * acertoReal + (1 - pesoReal) * def;
+    const peso = Math.max(1, qSub);
+    somaAcerto += acAjustado * peso;
+    totalQ += peso;
+  }
+  return totalQ > 0 ? somaAcerto / totalQ : def;
+}
+
+function horasDisc(disc, sessoes) {
+  return sessoes.filter(s => s.disc === disc).reduce((a,s) => a + s.aulas * (50/60), 0);
+}
+
+function acertoProjetado(disc, baseAtual, horasFeitas) {
+  const teto = PROB_CONFIG.teto[disc];
+  const k = PROB_CONFIG.k;
+  const ganho = (teto - baseAtual) * (1 - Math.exp(-k * horasFeitas));
+  return Math.min(teto, baseAtual + ganho);
+}
+
+function tScore(acerto, media, dp) {
+  return 50 + 10 * (acerto - media) / dp;
+}
+
+function notaFinal(acertoEsp, acertoGer) {
+  const npEsp = tScore(acertoEsp, PROB_CONFIG.mediaGrupoEsp, PROB_CONFIG.dpGrupoEsp);
+  const npGer = tScore(acertoGer, PROB_CONFIG.mediaGrupoGer, PROB_CONFIG.dpGrupoGer);
+  return npGer * 1 + npEsp * 3;
+}
+
+function probConvocacao(nota) {
+  const mid = 255;
+  const steep = 0.04;
+  return 1 / (1 + Math.exp(-steep * (nota - mid)));
+}
+
+function corGauge(p) {
+  if (p < 0.20) return 'var(--danger)';
+  if (p < 0.40) return 'var(--warn)';
+  if (p < 0.60) return 'var(--accent)';
+  return 'var(--success)';
+}
+
+function diagnostico(p, cenario) {
+  if (cenario === 'atual') {
+    if (p < 0.05) return '⚠️ Abaixo da zona de convocação. Ponto de partida — o método e a consistência são o único caminho.';
+    if (p < 0.20) return '📉 Ainda fora da zona competitiva. Cada disciplina estudada move a agulha.';
+    if (p < 0.40) return '📊 Entrando na zona de risco. Progresso real, mas não há margem para relaxar.';
+    if (p < 0.60) return '🎯 Zona competitiva. Consistência no método define o resultado.';
+    return '✅ Zona de segurança. Mantenha o ritmo e não subestime a reta final.';
+  } else {
+    if (p < 0.20) return '⚠️ Projeção abaixo do necessário. Revise a alocação de horas — Proc. Trabalho e Administrativo precisam de mais atenção.';
+    if (p < 0.35) return '📉 Projeção ainda fora da zona competitiva. O cronograma atual não é suficiente sem execução rigorosa.';
+    if (p < 0.50) return '📊 Chance real, mas sem conforto. Cada ponto perdido em Específicos custa caro na padronização.';
+    if (p < 0.65) return '🎯 Projeção na zona de convocação do cadastro de reserva. Dependente de execução consistente.';
+    return '✅ Projeção sólida — se o cronograma for executado com método. Não abandone as revisões espaçadas.';
+  }
+}
+
+function renderGauge(arcId, valId, prob) {
+  const circumference = Math.PI * 80;
+  const dash = prob * circumference;
+  const arc = document.getElementById(arcId);
+  const val = document.getElementById(valId);
+  if (!arc || !val) return;
+  arc.setAttribute('stroke-dasharray', dash + ' ' + circumference);
+  arc.setAttribute('stroke', corGauge(prob));
+  val.textContent = Math.round(prob * 100) + '%';
+  val.setAttribute('fill', corGauge(prob));
+}
+
+function renderProbabilidade() {
+  const sessoes = window._d ? window._d.sessoes : [];
+  const DISCS_ESP = ["Direito do Trabalho","Dir. Processual do Trabalho","Direito Civil","Direito Processual Civil","Direito Constitucional","Direito Administrativo"];
+  const DISCS_GER = ["Língua Portuguesa","Raciocínio Lógico-Matemático"];
+
+  const acAtual = {};
+  const acProj = {};
+  [...DISCS_ESP, ...DISCS_GER].forEach(disc => {
+    acAtual[disc] = acertoDiscAtual(disc, sessoes);
+    acProj[disc] = acertoProjetado(disc, acAtual[disc], PROB_CONFIG.horasPlanejadas[disc]);
+  });
+
+  const qEsp = DISCS_ESP.reduce((a,d) => a + PROB_CONFIG.questoesPorDisc[d], 0);
+  const qGer = DISCS_GER.reduce((a,d) => a + PROB_CONFIG.questoesPorDisc[d], 0);
+
+  const acEspAtual = DISCS_ESP.reduce((a,d) => a + acAtual[d] * PROB_CONFIG.questoesPorDisc[d], 0) / qEsp;
+  const acGerAtual = DISCS_GER.reduce((a,d) => a + acAtual[d] * PROB_CONFIG.questoesPorDisc[d], 0) / qGer;
+  const acEspProj = DISCS_ESP.reduce((a,d) => a + acProj[d] * PROB_CONFIG.questoesPorDisc[d], 0) / qEsp;
+  const acGerProj = DISCS_GER.reduce((a,d) => a + acProj[d] * PROB_CONFIG.questoesPorDisc[d], 0) / qGer;
+
+  const notaAtual = notaFinal(acEspAtual, acGerAtual);
+  const notaProj = notaFinal(acEspProj, acGerProj);
+  const pAtual = probConvocacao(notaAtual);
+  const pProj = probConvocacao(notaProj);
+
+  renderGauge('gauge-atual-arc', 'gauge-atual-val', pAtual);
+  renderGauge('gauge-proj-arc', 'gauge-proj-val', pProj);
+
+  const dAtual = document.getElementById('diag-atual');
+  const dProj = document.getElementById('diag-proj');
+  if (dAtual) dAtual.textContent = diagnostico(pAtual, 'atual') + ' (Nota estimada: ' + Math.round(notaAtual) + ' pts)';
+  if (dProj) dProj.textContent = diagnostico(pProj, 'proj') + ' (Nota projetada: ' + Math.round(notaProj) + ' pts)';
+
+  const tbody = document.getElementById('prob-disc-tbody');
+  if (tbody) {
+    tbody.innerHTML = [...DISCS_ESP, ...DISCS_GER].map(disc => {
+      const qa = Math.round(acAtual[disc] * 100);
+      const qp = Math.round(acProj[disc] * 100);
+      const qt = Math.round(PROB_CONFIG.teto[disc] * 100);
+      const qprova = PROB_CONFIG.questoesPorDisc[disc];
+      const bloco = PROB_CONFIG.bloco[disc];
+      const npBase = notaFinal(acEspAtual, acGerAtual);
+      let acEspTest = acEspAtual, acGerTest = acGerAtual;
+      if (bloco === 'esp') {
+        acEspTest = acEspAtual + (0.01 * qprova / qEsp);
+      } else {
+        acGerTest = acGerAtual + (0.01 * qprova / qGer);
+      }
+      const impacto = notaFinal(acEspTest, acGerTest) - npBase;
+      const corA = qa >= 70 ? 'var(--success)' : qa >= 50 ? 'var(--accent)' : 'var(--danger)';
+      const corP = qp >= 70 ? 'var(--success)' : qp >= 55 ? 'var(--accent)' : 'var(--warn)';
+      const tagCrit = qa < 40 && bloco === 'esp' ? '<span class="tag-critico">CRÍTICO</span>' : '';
+      const tagAlto = qa >= 40 && qa < 60 && bloco === 'esp' ? '<span class="tag-alto">ATENÇÃO</span>' : '';
+      return '<tr>' +
+        '<td>' + disc + tagCrit + tagAlto + '</td>' +
+        '<td style="color:' + corA + ';font-weight:600">' + qa + '%</td>' +
+        '<td style="color:' + corP + ';font-weight:600">' + qp + '%</td>' +
+        '<td style="color:var(--muted)">' + qt + '%</td>' +
+        '<td style="color:var(--muted)">' + qprova + 'q / ' + bloco.toUpperCase() + '</td>' +
+        '<td style="color:var(--accent)">+' + impacto.toFixed(2) + 'pt/1pp</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  const alavEl = document.getElementById('prob-alavancas');
+  if (alavEl) {
+    const ganhos = [...DISCS_ESP, ...DISCS_GER].map(disc => {
+      const ganhoAcerto = acProj[disc] - acAtual[disc];
+      const bloco = PROB_CONFIG.bloco[disc];
+      const qprova = PROB_CONFIG.questoesPorDisc[disc];
+      let acEspSim = acEspAtual, acGerSim = acGerAtual;
+      if (bloco === 'esp') {
+        acEspSim = DISCS_ESP.reduce((a,d) => {
+          const ac = d === disc ? acProj[d] : acAtual[d];
+          return a + ac * PROB_CONFIG.questoesPorDisc[d];
+        }, 0) / qEsp;
+      } else {
+        acGerSim = DISCS_GER.reduce((a,d) => {
+          const ac = d === disc ? acProj[d] : acAtual[d];
+          return a + ac * PROB_CONFIG.questoesPorDisc[d];
+        }, 0) / qGer;
+      }
+      const pSim = probConvocacao(notaFinal(acEspSim, acGerSim));
+      const gainPP = Math.round((pSim - pAtual) * 100);
+      return { disc, gainPP, ganhoAcerto: Math.round(ganhoAcerto * 100) };
+    }).sort((a,b) => b.gainPP - a.gainPP);
+
+    alavEl.innerHTML = ganhos.map((g, i) => {
+      const barW = Math.min(100, Math.round(g.gainPP * 2.5));
+      const cor = i === 0 ? 'var(--danger)' : i === 1 ? 'var(--warn)' : 'var(--accent)';
+      return '<div class="alavanca-item">' +
+        '<div>' +
+          '<div class="alavanca-nome">' + (i+1) + '. ' + g.disc + '</div>' +
+          '<div style="font-size:.62rem;color:var(--muted);margin-top:2px">Ganho potencial de acerto: +' + g.ganhoAcerto + 'pp</div>' +
+        '</div>' +
+        '<div class="alavanca-bar-wrap">' +
+          '<div style="background:var(--border);border-radius:99px;height:5px;overflow:hidden">' +
+            '<div style="width:' + barW + '%;height:100%;background:' + cor + ';border-radius:99px"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="alavanca-gain">+' + g.gainPP + 'pp prob</div>' +
+      '</div>';
+    }).join('');
+  }
+}
+
+window.renderProbabilidade = renderProbabilidade;
+
+</script>
+</body>
+</html>
