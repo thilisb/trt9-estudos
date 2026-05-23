@@ -541,6 +541,7 @@ function iniciarSync(uid){
       window._d.revisoes=d.revisoes||[];
       window._d.subTotais=d.subTotais||{};
       window._d.metaSemanal=d.metaSemanal||30;
+      window._d.linksErros=d.linksErros||{};
       const mEl=document.getElementById('meta-semanal-input');
       if(mEl)mEl.value=window._d.metaSemanal;
     }
@@ -980,7 +981,7 @@ const ERROS_DISCS = [
 ];
 
 function getLinksErros() {
-  try { return JSON.parse(localStorage.getItem('trt9_drive_links') || '{}'); } catch { return {}; }
+  return window._d.linksErros || {};
 }
 
 function renderErrosLinks() {
@@ -1022,14 +1023,16 @@ window.fecharConfiguracaoLinks = function() {
   renderErrosLinks();
 };
 
-window.salvarLinksErros = function() {
+window.salvarLinksErros = async function() {
   const links = {};
   ERROS_DISCS.forEach(d => {
     const val = (document.getElementById('link-' + d.key)?.value || '').trim();
     if (val) links[d.key] = val;
   });
-  localStorage.setItem('trt9_drive_links', JSON.stringify(links));
+  window._d.linksErros = links;
+  await window._salvar();
   fecharConfiguracaoLinks();
+  renderErrosLinks();
   showToast('✅ Links salvos!');
 };
 
