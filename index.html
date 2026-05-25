@@ -579,7 +579,7 @@ const TOTAL_G=DNAMES.reduce((a,d)=>a+DISC[d].total,0);
 
 window._d={sessoes:[],revisoes:[],subTotais:{}};
 
-function hoje(){return new Date().toISOString().slice(0,10);}
+function hoje(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
 function fmtD(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
 function diasAte(iso){
   const [ay,am,ad]=iso.split('-').map(Number);
