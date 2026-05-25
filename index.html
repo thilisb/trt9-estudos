@@ -786,6 +786,19 @@ function renderStats(){
   document.getElementById('s-dias').textContent=dias;
   document.getElementById('s-horas').textContent=hTotal.toFixed(1)+'h';
   document.getElementById('s-prog').textContent=Math.round(tA/TOTAL_G*100)+'%';
+  // Prob. conv. no painel — reutiliza o mesmo cálculo do módulo de probabilidade
+  try{
+    const _sess=window._d.sessoes;
+    const _DESP=["Direito do Trabalho","Dir. Processual do Trabalho","Direito Civil","Direito Processual Civil","Direito Constitucional","Direito Administrativo"];
+    const _DGER=["Língua Portuguesa","Raciocínio Lógico-Matemático"];
+    const _qEsp=_DESP.reduce((a,d)=>a+PROB_CONFIG.questoesPorDisc[d],0);
+    const _qGer=_DGER.reduce((a,d)=>a+PROB_CONFIG.questoesPorDisc[d],0);
+    const _acEsp=_DESP.reduce((a,d)=>a+acertoDiscAtual(d,_sess)*PROB_CONFIG.questoesPorDisc[d],0)/_qEsp;
+    const _acGer=_DGER.reduce((a,d)=>a+acertoDiscAtual(d,_sess)*PROB_CONFIG.questoesPorDisc[d],0)/_qGer;
+    const _p=probConvocacao(notaFinal(_acEsp,_acGer));
+    const pEl=document.getElementById('s-prob-dash');
+    if(pEl){pEl.textContent=Math.round(_p*100)+'%';pEl.style.color=corGauge(_p);}
+  }catch(e){}
   const pct=Math.min(100,Math.round(tA/TOTAL_G*100));
   const circ=2*Math.PI*75;
   const fill=pct/100*circ;
