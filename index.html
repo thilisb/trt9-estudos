@@ -586,6 +586,8 @@ function diasAte(iso){
   const [by,bm,bd]=hoje().split('-').map(Number);
   const a=new Date(ay,am-1,ad);
   const b=new Date(by,bm-1,bd);
+  a.setHours(12,0,0,0);
+  b.setHours(12,0,0,0);
   return Math.round((a-b)/86400000);
 }
 function sk(disc,sub){return(disc+'||'+sub).replace(/[^a-zA-Z0-9||]/g,'_');}
