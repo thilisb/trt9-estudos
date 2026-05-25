@@ -581,7 +581,13 @@ window._d={sessoes:[],revisoes:[],subTotais:{}};
 
 function hoje(){return new Date().toISOString().slice(0,10);}
 function fmtD(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
-function diasAte(iso){return Math.round((new Date(iso)-new Date(hoje()))/86400000);}
+function diasAte(iso){
+  const [ay,am,ad]=iso.split('-').map(Number);
+  const [by,bm,bd]=hoje().split('-').map(Number);
+  const a=new Date(ay,am-1,ad);
+  const b=new Date(by,bm-1,bd);
+  return Math.round((a-b)/86400000);
+}
 function sk(disc,sub){return(disc+'||'+sub).replace(/[^a-zA-Z0-9||]/g,'_');}
 
 function showToast(msg,tipo='ok'){
