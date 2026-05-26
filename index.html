@@ -567,7 +567,21 @@ const DISC={
   "Raciocínio Lógico-Matemático":{total:86,prior:"MANUTENÇÃO",cor:"#4aae6e",subs:["Números inteiros e racionais","Múltiplos e divisores","Frações","Razões e proporções","Regra de três","Porcentagem","Lógica — relações e dedução","Raciocínio verbal e matemático","Raciocínio sequencial","Formação de conceitos","Lógica proposicional"]}
 };
 const DNAMES=Object.keys(DISC);
-const TOTAL_G=DNAMES.reduce((a,d)=>a+DISC[d].total,0);
+// ── Total estimado por disciplina (média móvel dos subTotais informados) ──
+function totalEstimadoDisc(nome){
+  const subs=DISC[nome].subs;
+  const totaisInformados=subs.map(s=>window._d.subTotais[sk(nome,s)]||0).filter(v=>v>0);
+  if(totaisInformados.length===0) return null; // ainda sem dados suficientes
+  const media=totaisInformados.reduce((a,v)=>a+v,0)/totaisInformados.length;
+  return Math.round(media*subs.length);
+}
+function totalEstimadoGeral(){
+  // Soma apenas disciplinas que já têm estimativa; ignora as sem dados
+  return DNAMES.reduce((a,nome)=>{
+    const t=totalEstimadoDisc(nome);
+    return a+(t||0);
+  },0)||1;
+}
 
 window._d={sessoes:[],revisoes:[],subTotais:{}};
 
@@ -779,7 +793,9 @@ function renderStats(){
   document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
   document.getElementById('s-dias').textContent=dias;
   document.getElementById('s-horas').textContent=hTotal.toFixed(1)+'h';
-  document.getElementById('s-prog').textContent=Math.round(tA/TOTAL_G*100)+'%';
+  const _totalG=totalEstimadoGeral();
+  const _progPct=_totalG>1?Math.round(tA/_totalG*100):0;
+  document.getElementById('s-prog').textContent=_progPct+'%';
   // Prob. conv. no painel — reutiliza o mesmo cálculo do módulo de probabilidade
   try{
     const _sess=window._d.sessoes;
@@ -793,7 +809,7 @@ function renderStats(){
     const pEl=document.getElementById('s-prob-dash');
     if(pEl){pEl.textContent=Math.round(_p*100)+'%';pEl.style.color=corGauge(_p);}
   }catch(e){}
-  const pct=Math.min(100,Math.round(tA/TOTAL_G*100));
+  const pct=Math.min(100,_progPct);
   const circ=2*Math.PI*75;
   const fill=pct/100*circ;
   const ring=document.getElementById('dash-ring-fill');
@@ -859,9 +875,11 @@ function renderDash(){
   document.getElementById('dash-disc').innerHTML='<div>'+DNAMES.map(nome=>{
     const disc=DISC[nome];
     const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
-    const pct=Math.min(100,Math.round(f/disc.total*100));
+    const _tEst=totalEstimadoDisc(nome);
+    const pct=_tEst?Math.min(100,Math.round(f/_tEst*100)):0;
+    const _tEstLbl=_tEst?(''+_tEst):'?';
     const bc=disc.prior==='MÁXIMA'?'b-max':disc.prior==='ALTA'?'b-alta':'b-man';
-    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:.71rem;margin-bottom:3px"><span>'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></span><span style="color:var(--muted)">'+f+'/'+disc.total+'</span></div><div class="bar"><div class="bar-fill" style="width:'+pct+'%;background:'+disc.cor+'"></div></div></div>';
+    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:.71rem;margin-bottom:3px"><span>'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></span><span style="color:var(--muted)">'+f+'/'+_tEstLbl+'</span></div><div class="bar"><div class="bar-fill" style="width:'+pct+'%;background:'+disc.cor+'"></div></div></div>';
   }).join('')+'</div>';
 }
 
@@ -883,7 +901,9 @@ function renderProgresso(){
   document.getElementById('prog-list').innerHTML=DNAMES.map(nome=>{
     const disc=DISC[nome];
     const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
-    const pct=Math.min(100,Math.round(f/disc.total*100));
+    const _tEstP=totalEstimadoDisc(nome);
+    const pct=_tEstP?Math.min(100,Math.round(f/_tEstP*100)):0;
+    const _tEstPLbl=_tEstP?('~'+_tEstP):'? aulas';
     const qT=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.q,0);
     const acT=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.ac,0);
     const acP=qT>0?Math.round(acT/qT*100)+'%':'—';
@@ -921,7 +941,7 @@ function renderProgresso(){
       '<div class="disc-header">'+
         '<div class="disc-name">'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></div>'+
         '<div style="display:flex;align-items:center;gap:8px">'+
-          '<div class="disc-stats">'+f+'/'+disc.total+' · '+acP+'</div>'+
+          '<div class="disc-stats">'+f+'/'+_tEstPLbl+' · '+acP+'</div>'+
           (resumoStatus?'<div style="font-size:.58rem">'+resumoStatus+'</div>':'') +
           '<svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="'+ringR+'" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="'+ringR+'" fill="none" stroke="'+disc.cor+'" stroke-width="3" stroke-linecap="round" stroke-dasharray="'+ringFill+' '+ringC+'" transform="rotate(-90 17 17)"/><text x="17" y="21" text-anchor="middle" font-size="7" fill="'+disc.cor+'" font-family="var(--mono)">'+pct+'</text></svg>'+
         '</div>'+
