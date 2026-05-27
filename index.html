@@ -685,7 +685,7 @@ window.registrarSessao=async function(){
   let toastMsg='✅ Sessão registrada!';
 
   if(totalDefinido>0){
-    // Tem total definido: só agenda ao concluir
+    // Tem total definido: SÓ agenda quando concluir (aulas acumuladas >= total)
     if(aulasFeitas>=totalDefinido && !jaTemRevisao){
       agendarRevisoes(disc,sub,data);
       toastMsg='🎯 Subtópico concluído! Revisões agendadas (+7, +30, +90 dias)';
@@ -693,12 +693,11 @@ window.registrarSessao=async function(){
       toastMsg='✅ Sessão registrada! (revisões já agendadas anteriormente)';
     } else {
       const faltam=totalDefinido-aulasFeitas;
-      toastMsg='✅ Registrado! Faltam '+faltam+' aulas para agendar revisões.';
+      toastMsg='✅ Registrado! Faltam '+faltam+' aula(s) para concluir e agendar revisões.';
     }
   } else if(aulas>0){
-    // Sem total definido: agenda normalmente (comportamento legado)
-    if(!jaTemRevisao) agendarRevisoes(disc,sub,data);
-    toastMsg='✅ Sessão registrada! (dica: informe o total de aulas para agendamento preciso)';
+    // Sem total definido: NÃO agenda — orienta o usuário a informar o total
+    toastMsg='⚠️ Sessão registrada! Informe o total de aulas do subtópico para ativar o agendamento de revisões.';
   } else {
     toastMsg='✅ Sessão registrada!';
   }
@@ -717,9 +716,12 @@ window.registrarSessao=async function(){
 };
 
 function agendarRevisoes(disc,sub,dataBase){
+  // Parseia dataBase em horário local para evitar bug de fuso
+  const [by,bm,bd]=dataBase.split('-').map(Number);
   [[7,'R1 +7 dias'],[30,'R2 +30 dias'],[90,'R3 +90 dias']].forEach(([off,lbl])=>{
-    const d=new Date(dataBase);d.setDate(d.getDate()+off);
-    const dataRev=d.toISOString().slice(0,10);
+    const d=new Date(by,bm-1,bd);
+    d.setDate(d.getDate()+off);
+    const dataRev=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     if(!window._d.revisoes.find(r=>r.disc===disc&&r.sub===sub&&r.label===lbl))
       window._d.revisoes.push({id:Date.now()+off,disc,sub,label:lbl,data:dataRev,feita:false});
   });
@@ -760,7 +762,21 @@ window.gerarICSLote=function(){
   showToast('📅 '+p.length+' eventos baixados!');
 };
 
-window.deletarSessao=async function(id){window._d.sessoes=window._d.sessoes.filter(s=>s.id!==id);await window._salvar();render();showToast('Removido');};
+window.deletarSessao=async function(id){
+  const sessao=window._d.sessoes.find(s=>s.id===id);
+  window._d.sessoes=window._d.sessoes.filter(s=>s.id!==id);
+  if(sessao){
+    // Verifica se o subtópico ainda está concluído após a remoção
+    const key=sk(sessao.disc,sessao.sub);
+    const totalDef=window._d.subTotais[key]||0;
+    const aulasRestantes=window._d.sessoes.filter(s=>s.disc===sessao.disc&&s.sub===sessao.sub).reduce((a,s)=>a+s.aulas,0);
+    // Se não concluído mais (ou sem sessões), remove as revisões do subtópico
+    if(totalDef===0||aulasRestantes<totalDef){
+      window._d.revisoes=window._d.revisoes.filter(r=>!(r.disc===sessao.disc&&r.sub===sessao.sub));
+    }
+  }
+  await window._salvar();render();showToast('Sessão removida');
+};
 
 window.exportarJSON=function(){
   const blob=new Blob([JSON.stringify({versao:4,exportadoEm:new Date().toISOString(),...window._d},null,2)],{type:'application/json'});
