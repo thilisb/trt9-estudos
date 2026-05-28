@@ -333,7 +333,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <button class="btn btn-sm btn-ghost" onclick="atualizarMeta()" style="margin-top:18px;white-space:nowrap">Salvar meta</button>
     </div>
     <div id="meta-semanal-display"></div>
-    <div style="font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center">Horas contam aulas (0,5h) + páginas (40/h) + questões (2 min/q)</div>
+    <div style="font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center">Horas contam aulas (0,5h) + páginas (25/h) + questões (2 min/q)</div>
   </div>
   <div class="card">
     <div class="card-title">📚 Progresso por disciplina</div>
@@ -353,7 +353,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       </div>
       <div class="field"><label>Aulas assistidas</label><input type="number" id="f-aulas" min="0" placeholder="0"></div>
       <div class="field"><label>Total de aulas <span style="color:var(--accent);font-size:.55rem">★ se vídeo</span></label><input type="number" id="f-aulastotal" min="0" placeholder="Branco se já informou"></div>
-      <div class="field"><label>Páginas lidas <span style="color:var(--muted);font-size:.55rem">(40 págs = 1h | 1q = 2m)</span></label><input type="number" id="f-paginas" min="0" placeholder="0"></div>
+      <div class="field"><label>Páginas lidas <span style="color:var(--muted);font-size:.55rem">(25 págs = 1h | 1q = 2m)</span></label><input type="number" id="f-paginas" min="0" placeholder="0"></div>
       <div class="field"><label>Total de páginas <span style="color:var(--accent);font-size:.55rem">★ se PDF/livro</span></label><input type="number" id="f-paginastotal" min="0" placeholder="Branco se já informou"></div>
       <div class="field"><label>Questões feitas</label><input type="number" id="f-q" min="0" placeholder="0"></div>
       <div class="field"><label>Questões corretas</label><input type="number" id="f-ac" min="0" placeholder="0"></div>
@@ -889,7 +889,7 @@ function renderStats(){
   const tQ=d.sessoes.reduce((a,s)=>a+(s.q||0),0);
   const tAc=d.sessoes.reduce((a,s)=>a+(s.ac||0),0);
   const dias=[...new Set(d.sessoes.map(s=>s.data))].length;
-  const hTotal = tA*0.5 + tP/40 + tQ*(2/60);
+  const hTotal = tA*0.5 + tP/25 + tQ*(2/60);
   document.getElementById('s-aulas').textContent=tA;
   document.getElementById('s-questoes').textContent=tQ;
   document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
@@ -928,7 +928,7 @@ function renderMetaSemanal(d, hTotalGeral){
   const seg=new Date(agora);seg.setDate(agora.getDate()-diaSemana);seg.setHours(0,0,0,0);
   const semanaIso=[...Array(7)].map((_,i)=>{const dt=new Date(seg);dt.setDate(seg.getDate()+i);return dt.toISOString().slice(0,10);});
   const sessoesSemana=d.sessoes.filter(s=>semanaIso.includes(s.data));
-  const hSemana=sessoesSemana.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0);
+  const hSemana=sessoesSemana.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/25 + (s.q||0)*(2/60),0);
   const pct=Math.min(100,hSemana/meta*100);
   const faltam=Math.max(0,meta-hSemana);
   const cor=pct>=100?'var(--success)':pct>=60?'var(--accent)':'var(--warn)';
@@ -949,7 +949,7 @@ function renderMetaSemanal(d, hTotalGeral){
     '<div style="display:flex;gap:4px">' +
       semanaIso.map((iso,i)=>{
         const labels=['S','T','Q','Q','S','S','D'];
-        const h=sessoesSemana.filter(s=>s.data===iso).reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0);
+        const h=sessoesSemana.filter(s=>s.data===iso).reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/25 + (s.q||0)*(2/60),0);
         const isHoje=iso===hoje();
         const bc=h>0?(h>=4?'var(--success)':h>=2?'var(--accent)':'var(--surface3)'):'var(--border)';
         const tc=h>0?'var(--text)':'var(--muted)';
@@ -966,7 +966,7 @@ window.atualizarMeta=async function(){
   const meta=parseFloat(metaEl.value)||30;
   window._d.metaSemanal=meta;
   await window._salvar();
-  renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/40 + (s.q||0)*(2/60),0));
+  renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/25 + (s.q||0)*(2/60),0));
   showToast('✅ Meta atualizada!');
 };
 
