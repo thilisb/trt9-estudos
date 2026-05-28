@@ -351,9 +351,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <div class="field field-full" id="sub-info-box" style="display:none">
         <div id="sub-info-content" style="background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:.7rem;color:var(--text2);line-height:1.7;"></div>
       </div>
-      <div class="field"><label>Aulas assistidas</label><input type="number" id="f-aulas" min="0" max="30" placeholder="0"></div>
-      <div class="field"><label>Total de aulas do subtópico <span style="color:var(--accent);font-size:.55rem">★ informe na 1ª vez</span></label><input type="number" id="f-aulastotal" min="0" placeholder="Deixe em branco se já informou"></div>
+      <div class="field"><label>Aulas assistidas</label><input type="number" id="f-aulas" min="0" placeholder="0"></div>
+      <div class="field"><label>Total de aulas <span style="color:var(--accent);font-size:.55rem">★ se vídeo</span></label><input type="number" id="f-aulastotal" min="0" placeholder="Branco se já informou"></div>
       <div class="field"><label>Páginas lidas <span style="color:var(--muted);font-size:.55rem">(40 págs = 1h | 1q = 2m)</span></label><input type="number" id="f-paginas" min="0" placeholder="0"></div>
+      <div class="field"><label>Total de páginas <span style="color:var(--accent);font-size:.55rem">★ se PDF/livro</span></label><input type="number" id="f-paginastotal" min="0" placeholder="Branco se já informou"></div>
       <div class="field"><label>Questões feitas</label><input type="number" id="f-q" min="0" placeholder="0"></div>
       <div class="field"><label>Questões corretas</label><input type="number" id="f-ac" min="0" placeholder="0"></div>
       <div class="field field-full"><label>Observações / dúvidas</label><input type="text" id="f-obs" placeholder="Ex: dificuldade com prescrição intercorrente"></div>
@@ -368,7 +369,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     <div class="prog-legenda">
       <div class="prog-legenda-item"><span class="sub-status sub-status-ok">✅ concluído</span> Subtópico finalizado — revisão agendada</div>
       <div class="prog-legenda-item"><span class="sub-status sub-status-warn">⏳ em andamento</span> Total informado, ainda não concluiu</div>
-      <div class="prog-legenda-item"><span class="sub-status sub-status-notdef">⚠️ sem total</span> Estudado mas sem total de aulas definido</div>
+      <div class="prog-legenda-item"><span class="sub-status sub-status-notdef">⚠️ sem total</span> Estudado mas sem total definido</div>
       <div class="prog-legenda-item"><span class="sub-status sub-status-none">○ não iniciado</span> Nenhuma sessão registrada</div>
     </div>
     <div id="prog-list"></div>
@@ -530,6 +531,7 @@ function iniciarSync(uid){
       window._d.sessoes=d.sessoes||[];
       window._d.revisoes=d.revisoes||[];
       window._d.subTotais=d.subTotais||{};
+      window._d.subTotaisPaginas=d.subTotaisPaginas||{};
       window._d.metaSemanal=d.metaSemanal||30;
       window._d.linksErros=d.linksErros||{};
       const mEl=document.getElementById('meta-semanal-input');
@@ -567,23 +569,81 @@ const DISC={
   "Raciocínio Lógico-Matemático":{total:86,prior:"MANUTENÇÃO",cor:"#4aae6e",subs:["Números inteiros e racionais","Múltiplos e divisores","Frações","Razões e proporções","Regra de três","Porcentagem","Lógica — relações e dedução","Raciocínio verbal e matemático","Raciocínio sequencial","Formação de conceitos","Lógica proposicional"]}
 };
 const DNAMES=Object.keys(DISC);
-// ── Total estimado por disciplina (média móvel dos subTotais informados) ──
-function totalEstimadoDisc(nome){
-  const subs=DISC[nome].subs;
-  const totaisInformados=subs.map(s=>window._d.subTotais[sk(nome,s)]||0).filter(v=>v>0);
-  if(totaisInformados.length===0) return null; // ainda sem dados suficientes
-  const media=totaisInformados.reduce((a,v)=>a+v,0)/totaisInformados.length;
-  return Math.round(media*subs.length);
-}
-function totalEstimadoGeral(){
-  // Soma apenas disciplinas que já têm estimativa; ignora as sem dados
-  return DNAMES.reduce((a,nome)=>{
-    const t=totalEstimadoDisc(nome);
-    return a+(t||0);
-  },0)||1;
+
+// ── Total estimado por disciplina (Média Móvel Equivalente) ──
+
+const PAGS_POR_AULA = {
+  "Dir. Processual do Trabalho": 6.60,
+  "Direito Administrativo": 7.85,
+  "Direito do Trabalho": 7.5,
+  "Direito Civil": 7.5,
+  "Direito Processual Civil": 7.5,
+  "Direito Constitucional": 7.5,
+  "Língua Portuguesa": 7.5,
+  "Raciocínio Lógico-Matemático": 7.5
+};
+
+function converteParaAulas(paginas, disc) {
+  const fator = PAGS_POR_AULA[disc] || 7.5;
+  return paginas / fator;
 }
 
-window._d={sessoes:[],revisoes:[],subTotais:{}};
+function getMediaAulasPorSub(nome) {
+  const subs = DISC[nome].subs;
+  let somaPesos = 0, count = 0;
+  subs.forEach(sub => {
+    const key = sk(nome, sub);
+    const tA = window._d.subTotais[key] || 0;
+    const tP = window._d.subTotaisPaginas ? window._d.subTotaisPaginas[key] || 0 : 0;
+    if (tA > 0) { somaPesos += tA; count++; }
+    else if (tP > 0) { somaPesos += converteParaAulas(tP, nome); count++; }
+  });
+  return count > 0 ? (somaPesos / count) : 5; 
+}
+
+function calculoProgressoUnificado(nome) {
+  const media = getMediaAulasPorSub(nome);
+  let totalEquivalente = 0, feitoEquivalente = 0;
+
+  DISC[nome].subs.forEach(sub => {
+    const key = sk(nome, sub);
+    const tA = window._d.subTotais[key] || 0;
+    const tP = window._d.subTotaisPaginas ? window._d.subTotaisPaginas[key] || 0 : 0;
+    
+    const aF = window._d.sessoes.filter(s => s.disc === nome && s.sub === sub).reduce((a,s) => a + s.aulas, 0);
+    const pF = window._d.sessoes.filter(s => s.disc === nome && s.sub === sub).reduce((a,s) => a + (s.paginas||0), 0);
+
+    let pesoSub = 0, feitoSub = 0;
+
+    if (tA > 0) {
+      pesoSub = tA;
+      feitoSub = Math.min(aF, tA); 
+    } else if (tP > 0) {
+      pesoSub = converteParaAulas(tP, nome);
+      feitoSub = Math.min(converteParaAulas(pF, nome), pesoSub);
+    } else {
+      pesoSub = media;
+      feitoSub = Math.min(aF + converteParaAulas(pF, nome), media);
+    }
+
+    totalEquivalente += pesoSub;
+    feitoEquivalente += feitoSub;
+  });
+
+  return { feito: feitoEquivalente, total: totalEquivalente };
+}
+
+function totalEstimadoGeral(){
+  let tFeito = 0, tTotal = 0;
+  DNAMES.forEach(nome => {
+    const prog = calculoProgressoUnificado(nome);
+    tFeito += prog.feito;
+    tTotal += prog.total;
+  });
+  return { feito: tFeito, total: tTotal || 1 };
+}
+
+window._d={sessoes:[],revisoes:[],subTotais:{},subTotaisPaginas:{}};
 
 function hoje(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
 function fmtD(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
@@ -624,38 +684,49 @@ window.popularSubs=function(targetId,sourceId){
   document.getElementById('sub-info-box').style.display='none';
 };
 
-// ── Mostra info do subtópico selecionado no formulário ──
 window.mostrarInfoSub=function(){
   const disc=document.getElementById('f-disc').value;
   const sub=document.getElementById('f-sub').value;
   const box=document.getElementById('sub-info-box');
   const content=document.getElementById('sub-info-content');
   if(!disc||!sub){box.style.display='none';return;}
+
   const key=sk(disc,sub);
-  const totalDefinido=window._d.subTotais[key]||0;
+  const totalAulas=window._d.subTotais[key]||0;
+  const totalPags=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
   const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
+  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+(s.paginas||0),0);
   const temRevisao=window._d.revisoes.some(r=>r.disc===disc&&r.sub===sub);
-  // Preenche campo total automaticamente se já existe
+
   const fAulasTotal=document.getElementById('f-aulastotal');
-  if(totalDefinido>0)fAulasTotal.placeholder='Total já definido: '+totalDefinido+' aulas';
-  else fAulasTotal.placeholder='Informe o total de aulas';
+  const fPagsTotal=document.getElementById('f-paginastotal');
+
+  if(totalAulas>0) fAulasTotal.placeholder='Já definido: '+totalAulas+' aul';
+  else fAulasTotal.placeholder='Branco se já informou';
+
+  if(fPagsTotal) {
+    if(totalPags>0) fPagsTotal.placeholder='Já definido: '+totalPags+' pág';
+    else fPagsTotal.placeholder='Branco se já informou';
+  }
+
   let html='';
-  if(aulasFeitas===0&&totalDefinido===0){
-    html='<span style="color:var(--muted)">○</span> <strong>Não iniciado</strong> — informe o total de aulas na 1ª sessão.';
-  } else if(totalDefinido===0){
-    html='<span style="color:var(--accent)">⚠️</span> <strong>'+aulasFeitas+' aulas registradas</strong>, mas o total não foi definido. Informe o total para ativar o agendamento automático de revisões.';
-  } else if(aulasFeitas>=totalDefinido){
-    html='<span style="color:var(--success)">✅</span> <strong>Concluído!</strong> '+aulasFeitas+'/'+totalDefinido+' aulas.'+(temRevisao?' Revisões agendadas.':' Sessão extra sem novo agendamento.');
+  if(aulasFeitas===0 && pagsFeitas===0 && totalAulas===0 && totalPags===0){
+    html='<span style="color:var(--muted)">○</span> <strong>Não iniciado</strong> — informe o total (aulas ou págs) na 1ª sessão.';
+  } else if(totalAulas===0 && totalPags===0){
+    html='<span style="color:var(--accent)">⚠️</span> <strong>Em andamento sem total</strong>. Informe o total de aulas ou páginas para ativar as revisões.';
+  } else if((totalAulas>0 && aulasFeitas>=totalAulas) || (totalPags>0 && pagsFeitas>=totalPags)){
+    html='<span style="color:var(--success)">✅</span> <strong>Concluído!</strong> '+(temRevisao?' Revisões agendadas.':' Sessão extra sem novo agendamento.');
   } else {
-    const faltam=totalDefinido-aulasFeitas;
-    const pct=Math.round(aulasFeitas/totalDefinido*100);
-    html='<span style="color:var(--accent)">⏳</span> <strong>Em andamento:</strong> '+aulasFeitas+'/'+totalDefinido+' aulas ('+pct+'%) — faltam <strong>'+faltam+'</strong> para agendar revisões.';
+    if(totalAulas>0) {
+        html='<span style="color:var(--accent)">⏳</span> <strong>Em andamento (Aulas):</strong> '+aulasFeitas+'/'+totalAulas+' — faltam <strong>'+(totalAulas-aulasFeitas)+'</strong> para agendar revisões.';
+    } else {
+        html='<span style="color:var(--accent)">⏳</span> <strong>Em andamento (Páginas):</strong> '+pagsFeitas+'/'+totalPags+' — faltam <strong>'+(totalPags-pagsFeitas)+'</strong> para agendar revisões.';
+    }
   }
   content.innerHTML=html;
   box.style.display='block';
 };
 
-// ── Registrar sessão com lógica de agendamento por conclusão ──
 window.registrarSessao=async function(){
   const data=document.getElementById('f-data').value||hoje();
   const disc=document.getElementById('f-disc').value;
@@ -663,51 +734,62 @@ window.registrarSessao=async function(){
   const aulas=parseInt(document.getElementById('f-aulas').value)||0;
   const aulasTotal=parseInt(document.getElementById('f-aulastotal').value)||0;
   const paginas=parseInt(document.getElementById('f-paginas').value)||0;
+  const paginasTotal=document.getElementById('f-paginastotal') ? parseInt(document.getElementById('f-paginastotal').value)||0 : 0;
   const q=parseInt(document.getElementById('f-q').value)||0;
   const ac=parseInt(document.getElementById('f-ac').value)||0;
   const obs=document.getElementById('f-obs').value.trim();
+
   if(!disc){showToast('Selecione a disciplina','err');return;}
   if(!sub){showToast('Selecione o subtópico','err');return;}
   if(aulas===0&&q===0&&paginas===0){showToast('Informe aulas, páginas ou questões','err');return;}
   if(ac>q){showToast('Acertos > questões','err');return;}
 
-  // Salva total de aulas se informado
   if(aulasTotal>0) window._d.subTotais[sk(disc,sub)]=aulasTotal;
+  if(paginasTotal>0) {
+    if(!window._d.subTotaisPaginas) window._d.subTotaisPaginas = {};
+    window._d.subTotaisPaginas[sk(disc,sub)]=paginasTotal;
+  }
 
-  // Registra a sessão
   window._d.sessoes.unshift({id:Date.now(),data,disc,sub,aulas,paginas,q,ac,obs});
 
-  // ── Lógica de agendamento de revisões ──
-  const totalDefinido=window._d.subTotais[sk(disc,sub)]||0;
+  const key=sk(disc,sub);
+  const totalDefAulas=window._d.subTotais[key]||0;
+  const totalDefPags=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
   const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
+  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+(s.paginas||0),0);
   const jaTemRevisao=window._d.revisoes.some(r=>r.disc===disc&&r.sub===sub);
+
+  let concluido = false;
+  let msgFaltam = '';
+
+  if(totalDefAulas>0 && aulasFeitas>=totalDefAulas) concluido = true;
+  if(totalDefPags>0 && pagsFeitas>=totalDefPags) concluido = true;
+
+  if(totalDefAulas>0 && !concluido) msgFaltam = `faltam ${totalDefAulas-aulasFeitas} aula(s)`;
+  else if(totalDefPags>0 && !concluido) msgFaltam = `faltam ${totalDefPags-pagsFeitas} pág(s)`;
 
   let toastMsg='✅ Sessão registrada!';
 
-  if(totalDefinido>0){
-    // Tem total definido: SÓ agenda quando concluir (aulas acumuladas >= total)
-    if(aulasFeitas>=totalDefinido && !jaTemRevisao){
+  if(concluido && !jaTemRevisao){
       agendarRevisoes(disc,sub,data);
       toastMsg='🎯 Subtópico concluído! Revisões agendadas (+7, +30, +90 dias)';
-    } else if(aulasFeitas>=totalDefinido && jaTemRevisao){
-      toastMsg='✅ Sessão registrada! (revisões já agendadas anteriormente)';
-    } else {
-      const faltam=totalDefinido-aulasFeitas;
-      toastMsg='✅ Registrado! Faltam '+faltam+' aula(s) para concluir e agendar revisões.';
-    }
-  } else if(aulas>0){
-    // Sem total definido: NÃO agenda — orienta o usuário a informar o total
-    toastMsg='⚠️ Sessão registrada! Informe o total de aulas do subtópico para ativar o agendamento de revisões.';
-  } else {
-    toastMsg='✅ Sessão registrada!';
+  } else if (concluido && jaTemRevisao) {
+      toastMsg='✅ Sessão registrada! (revisões já agendadas)';
+  } else if (msgFaltam) {
+      toastMsg=`✅ Registrado! ${msgFaltam} para concluir e agendar.`;
+  } else if (aulas>0 || paginas>0) {
+      toastMsg='⚠️ Sessão registrada! Informe o total (aulas ou págs) para ativar as revisões.';
   }
 
-  // Limpa formulário
   ['f-disc','f-sub'].forEach(id=>document.getElementById(id).value='');
-  ['f-aulas','f-aulastotal','f-paginas','f-q','f-ac','f-obs'].forEach(id=>document.getElementById(id).value='');
+  ['f-aulas','f-aulastotal','f-paginas','f-paginastotal','f-q','f-ac','f-obs'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value='';
+  });
   document.getElementById('f-data').value=hoje();
   document.getElementById('f-sub').innerHTML='<option value="">Selecione a disciplina primeiro</option>';
-  document.getElementById('f-aulastotal').placeholder='Deixe em branco se já informou';
+  document.getElementById('f-aulastotal').placeholder='Branco se já informou';
+  if(document.getElementById('f-paginastotal')) document.getElementById('f-paginastotal').placeholder='Branco se já informou';
   document.getElementById('sub-info-box').style.display='none';
 
   await window._salvar();
@@ -716,7 +798,6 @@ window.registrarSessao=async function(){
 };
 
 function agendarRevisoes(disc,sub,dataBase){
-  // Parseia dataBase em horário local para evitar bug de fuso
   const [by,bm,bd]=dataBase.split('-').map(Number);
   [[7,'R1 +7 dias'],[30,'R2 +30 dias'],[90,'R3 +90 dias']].forEach(([off,lbl])=>{
     const d=new Date(by,bm-1,bd);
@@ -766,12 +847,17 @@ window.deletarSessao=async function(id){
   const sessao=window._d.sessoes.find(s=>s.id===id);
   window._d.sessoes=window._d.sessoes.filter(s=>s.id!==id);
   if(sessao){
-    // Verifica se o subtópico ainda está concluído após a remoção
     const key=sk(sessao.disc,sessao.sub);
-    const totalDef=window._d.subTotais[key]||0;
+    const totalAulas=window._d.subTotais[key]||0;
+    const totalPags=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
     const aulasRestantes=window._d.sessoes.filter(s=>s.disc===sessao.disc&&s.sub===sessao.sub).reduce((a,s)=>a+s.aulas,0);
-    // Se não concluído mais (ou sem sessões), remove as revisões do subtópico
-    if(totalDef===0||aulasRestantes<totalDef){
+    const pagsRestantes=window._d.sessoes.filter(s=>s.disc===sessao.disc&&s.sub===sessao.sub).reduce((a,s)=>a+(s.paginas||0),0);
+
+    let aindaConcluido = false;
+    if(totalAulas>0 && aulasRestantes>=totalAulas) aindaConcluido = true;
+    if(totalPags>0 && pagsRestantes>=totalPags) aindaConcluido = true;
+
+    if(!aindaConcluido){
       window._d.revisoes=window._d.revisoes.filter(r=>!(r.disc===sessao.disc&&r.sub===sessao.sub));
     }
   }
@@ -787,7 +873,7 @@ window.importarJSON=async function(evt){
   const reader=new FileReader();
   reader.onload=async function(e){
     try{const d=JSON.parse(e.target.result);if(!d.sessoes)throw new Error();
-      window._d.sessoes=d.sessoes||[];window._d.revisoes=d.revisoes||[];window._d.subTotais=d.subTotais||{};
+      window._d.sessoes=d.sessoes||[];window._d.revisoes=d.revisoes||[];window._d.subTotais=d.subTotais||{};window._d.subTotaisPaginas=d.subTotaisPaginas||{};
       await window._salvar();render();showToast('✅ Importado!');
     }catch{showToast('❌ Arquivo inválido','err');}
   };
@@ -809,10 +895,11 @@ function renderStats(){
   document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
   document.getElementById('s-dias').textContent=dias;
   document.getElementById('s-horas').textContent=hTotal.toFixed(1)+'h';
-  const _totalG=totalEstimadoGeral();
-  const _progPct=_totalG>1?Math.round(tA/_totalG*100):0;
-  document.getElementById('s-prog').textContent=_progPct+'%';
-  // Prob. conv. no painel — reutiliza o mesmo cálculo do módulo de probabilidade
+  
+  const progGeral = totalEstimadoGeral();
+  const _progPct = Math.round((progGeral.feito / progGeral.total) * 100);
+  document.getElementById('s-prog').textContent = _progPct + '%';
+  
   try{
     const _sess=window._d.sessoes;
     const _DESP=["Direito do Trabalho","Dir. Processual do Trabalho","Direito Civil","Direito Processual Civil","Direito Constitucional","Direito Administrativo"];
@@ -890,43 +977,53 @@ function renderDash(){
     :ru.map(r=>'<div class="rev-item urgente" style="margin-bottom:5px"><div><div style="font-size:.74rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted)">'+r.sub+' · '+r.label+'</div></div><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div>').join('');
   document.getElementById('dash-disc').innerHTML='<div>'+DNAMES.map(nome=>{
     const disc=DISC[nome];
-    const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
-    const _tEst=totalEstimadoDisc(nome);
-    const pct=_tEst?Math.min(100,Math.round(f/_tEst*100)):0;
-    const _tEstLbl=_tEst?(''+_tEst):'?';
+    const prog = calculoProgressoUnificado(nome);
+    const pct = Math.min(100, Math.round((prog.feito / prog.total) * 100));
+    const _tEstLbl = Math.round(prog.total);
+    const f = Math.round(prog.feito);
     const bc=disc.prior==='MÁXIMA'?'b-max':disc.prior==='ALTA'?'b-alta':'b-man';
-    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:.71rem;margin-bottom:3px"><span>'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></span><span style="color:var(--muted)">'+f+'/'+_tEstLbl+'</span></div><div class="bar"><div class="bar-fill" style="width:'+pct+'%;background:'+disc.cor+'"></div></div></div>';
+    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:.71rem;margin-bottom:3px"><span>'+nome+'<span class="badge '+bc+'">'+disc.prior+'</span></span><span style="color:var(--muted)">'+f+'/'+_tEstLbl+' eqv</span></div><div class="bar"><div class="bar-fill" style="width:'+pct+'%;background:'+disc.cor+'"></div></div></div>';
   }).join('')+'</div>';
 }
 
 window.toggleSub=function(id){document.getElementById(id).classList.toggle('open');};
 
-// ── Calcular status do subtópico para a tela de Progresso ──
 function statusSub(disc, sub){
   const key=sk(disc,sub);
-  const totalDefinido=window._d.subTotais[key]||0;
+  const totalAulas=window._d.subTotais[key]||0;
+  const totalPags=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
   const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
-  if(aulasFeitas===0) return {tipo:'none', label:'○ não iniciado', aulas:0, total:totalDefinido};
-  if(totalDefinido===0) return {tipo:'notdef', label:'⚠️ sem total', aulas:aulasFeitas, total:0};
-  if(aulasFeitas>=totalDefinido) return {tipo:'ok', label:'✅ concluído', aulas:aulasFeitas, total:totalDefinido};
-  return {tipo:'warn', label:'⏳ '+aulasFeitas+'/'+totalDefinido, aulas:aulasFeitas, total:totalDefinido};
+  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+(s.paginas||0),0);
+
+  if(aulasFeitas===0 && pagsFeitas===0) return {tipo:'none', label:'○ não iniciado', pct:0};
+  if(totalAulas===0 && totalPags===0) return {tipo:'notdef', label:'⚠️ sem total', pct:0};
+
+  if(totalAulas>0) {
+      if(aulasFeitas>=totalAulas) return {tipo:'ok', label:'✅ concluído', pct:100};
+      return {tipo:'warn', label:'⏳ '+aulasFeitas+'/'+totalAulas+' a.', pct:(aulasFeitas/totalAulas)*100};
+  }
+  if(totalPags>0) {
+      if(pagsFeitas>=totalPags) return {tipo:'ok', label:'✅ concluído', pct:100};
+      return {tipo:'warn', label:'⏳ '+pagsFeitas+'/'+totalPags+' p.', pct:(pagsFeitas/totalPags)*100};
+  }
 }
 
 function renderProgresso(){
   const d=window._d;
   document.getElementById('prog-list').innerHTML=DNAMES.map(nome=>{
     const disc=DISC[nome];
-    const f=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.aulas,0);
-    const _tEstP=totalEstimadoDisc(nome);
-    const pct=_tEstP?Math.min(100,Math.round(f/_tEstP*100)):0;
-    const _tEstPLbl=_tEstP?('~'+_tEstP):'? aulas';
+    const prog = calculoProgressoUnificado(nome);
+    const f = Math.round(prog.feito);
+    const _tEstP = Math.round(prog.total);
+    const pct = Math.min(100, Math.round((prog.feito / prog.total) * 100));
+    const _tEstPLbl = _tEstP + ' eqv';
+    
     const qT=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.q,0);
     const acT=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.ac,0);
     const acP=qT>0?Math.round(acT/qT*100)+'%':'—';
     const bc=disc.prior==='MÁXIMA'?'b-max':disc.prior==='ALTA'?'b-alta':'b-man';
     const domId='sub_'+nome.replace(/[\s.]/g,'_');
 
-    // Contar subtópicos por status
     const statusCounts={ok:0,warn:0,notdef:0,none:0};
     disc.subs.forEach(sub=>{ const st=statusSub(nome,sub); statusCounts[st.tipo]++; });
     const totalSubs=disc.subs.length;
@@ -942,8 +1039,7 @@ function renderProgresso(){
       const aS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
       const aP=qS>0?Math.round(aS/qS*100)+'%':'—';
       const corA=qS>0?(aS/qS>=.7?'var(--success)':aS/qS>=.5?'var(--accent)':'var(--danger)'):'var(--muted)';
-      // Barra de progresso do subtópico
-      const pS=st.total>0?Math.min(100,Math.round(st.aulas/st.total*100)):0;
+      const pS = Math.min(100, Math.round(st.pct || 0));
       return '<div class="sub-item">'+
         '<div class="sub-name">'+sub+'</div>'+
         '<span class="'+statusClass+'">'+st.label+'</span>'+
@@ -996,7 +1092,6 @@ function renderHistorico(filtro){
   document.getElementById('hist-list').innerHTML=lista.slice(0,60).map(s=>{
     const pct=s.q>0?Math.round(s.ac/s.q*100):null;
     const cls=pct===null?'':pct>=70?'acerto-bom':pct>=50?'acerto-ok':'acerto-ruim';
-    // Status do subtópico no momento do registro
     const key=sk(s.disc,s.sub);
     const totalDef=window._d.subTotais[key]||0;
     const aulasAcc=window._d.sessoes.filter(x=>x.disc===s.disc&&x.sub===s.sub).reduce((a,x)=>a+x.aulas,0);
@@ -1014,11 +1109,6 @@ window.showPage=function(id,btn){
   if(id==='probabilidade' && window.renderProbabilidade) window.renderProbabilidade();
   if(id==='erros') renderErrosLinks();
 };
-
-
-// ═══════════════════════════════════════════════════════
-// MÓDULO — CADERNOS DE ERROS (LINKS CONFIGURÁVEIS)
-// ═══════════════════════════════════════════════════════
 
 const ERROS_DISCS = [
   { key: 'dt',  label: '🚨 Erros — Direito do Trabalho' },
@@ -1080,11 +1170,6 @@ window.salvarLinksErros = async function() {
 };
 
 popularTodosSelects();
-
-
-// ═══════════════════════════════════════════════════════
-// MÓDULO DE PROBABILIDADE DE CONVOCAÇÃO — TRT9
-// ═══════════════════════════════════════════════════════
 
 const PROB_CONFIG = {
   questoesPorDisc: {
@@ -1156,15 +1241,11 @@ function acertoDiscAtual(disc, sessoes) {
   
   for (const sub of subs) {
     const qSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.q, 0);
-    // Mistura a nota real com a nota base (20% ou 80%) dependendo de quantas questões foram feitas
     const pesoReal = Math.min(qSub, PROB_CONFIG.minQSub) / PROB_CONFIG.minQSub;
     const acSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.ac, 0);
     const acertoReal = qSub > 0 ? acSub / qSub : 0;
     const acAjustado = pesoReal * acertoReal + (1 - pesoReal) * def;
     
-    // 👇 AQUI ESTÁ A CORREÇÃO 👇
-    // O peso de todos os subtópicos é fixado em 1.
-    // Isso garante que a média final seja a soma das notas dividida pelo total de subtópicos do edital.
     const peso = 1; 
     
     somaAcerto += acAjustado * peso;
@@ -1172,7 +1253,6 @@ function acertoDiscAtual(disc, sessoes) {
   }
   return totalQ > 0 ? somaAcerto / totalQ : def;
 }
-
 
 function horasDisc(disc, sessoes) {
   return sessoes.filter(s => s.disc === disc).reduce((a,s) => a + s.aulas * (50/60), 0);
