@@ -1153,18 +1153,26 @@ function acertoDiscAtual(disc, sessoes) {
   let totalQ = 0, somaAcerto = 0;
   const isGer = PROB_CONFIG.bloco[disc] === 'ger';
   const def = isGer ? PROB_CONFIG.defaultGer : PROB_CONFIG.defaultEsp;
+  
   for (const sub of subs) {
     const qSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.q, 0);
+    // Mistura a nota real com a nota base (20% ou 80%) dependendo de quantas questões foram feitas
     const pesoReal = Math.min(qSub, PROB_CONFIG.minQSub) / PROB_CONFIG.minQSub;
     const acSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.ac, 0);
     const acertoReal = qSub > 0 ? acSub / qSub : 0;
     const acAjustado = pesoReal * acertoReal + (1 - pesoReal) * def;
-    const peso = Math.max(1, qSub);
+    
+    // 👇 AQUI ESTÁ A CORREÇÃO 👇
+    // O peso de todos os subtópicos é fixado em 1.
+    // Isso garante que a média final seja a soma das notas dividida pelo total de subtópicos do edital.
+    const peso = 1; 
+    
     somaAcerto += acAjustado * peso;
     totalQ += peso;
   }
   return totalQ > 0 ? somaAcerto / totalQ : def;
 }
+
 
 function horasDisc(disc, sessoes) {
   return sessoes.filter(s => s.disc === disc).reduce((a,s) => a + s.aulas * (50/60), 0);
