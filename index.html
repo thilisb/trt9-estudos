@@ -66,6 +66,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 .btn-export{background:var(--success-bg);color:var(--success);border-color:rgba(74,174,110,.3);}
 .btn-import-label{background:var(--surface2);color:var(--muted);border-color:var(--border2);cursor:pointer;}
 .btn-logout{background:var(--danger-bg);color:var(--danger);border-color:rgba(224,82,82,.3);}
+.btn-edital{background:rgba(232,162,74,.15);color:var(--accent);border-color:rgba(232,162,74,.35);}
 .sync-bar{font-size:.58rem;color:var(--muted);text-align:right;padding:3px 20px 4px;border-top:1px solid var(--border);}
 .sync-ok{color:var(--success);}.sync-err{color:var(--danger);}
 
@@ -246,6 +247,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 /* ── Progresso: legenda de status ── */
 .prog-legenda{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-xs);border:1px solid var(--border);}
 .prog-legenda-item{display:flex;align-items:center;gap:5px;font-size:.58rem;color:var(--muted);}
+/* ── Histórico semanal ── */
+.week-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.week-bar-outer{width:100%;height:64px;display:flex;align-items:flex-end;position:relative;}
+.week-meta-line{position:absolute;left:0;right:0;height:1px;background:rgba(232,162,74,.35);pointer-events:none;}
+.week-bar-fill{width:100%;border-radius:3px 3px 0 0;min-height:2px;transition:height .5s cubic-bezier(.4,0,.2,1);}
+.week-bar-val{font-size:.54rem;font-weight:600;text-align:center;min-height:14px;}
+.week-bar-lbl{font-size:.5rem;color:var(--muted);text-align:center;line-height:1.3;}
+.week-atual .week-bar-fill{outline:1px solid var(--accent);}
+.week-atual .week-bar-lbl{color:var(--accent);font-weight:600;}
 </style>
 </head>
 <body>
@@ -269,6 +279,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     <div class="nav-right">
       <div class="nav-user" id="navUser"></div>
       <div class="nav-actions">
+        <button class="btn-nav btn-edital" onclick="gerarRelatorioEdital()">📋 Edital</button>
         <button class="btn-nav btn-export" onclick="exportarJSON()">⬇ Export</button>
         <label class="btn-nav btn-import-label">⬆ Import<input type="file" accept=".json" onchange="importarJSON(event)" style="display:none"></label>
         <button class="btn-nav btn-logout" onclick="logout()">Sair</button>
@@ -324,8 +335,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     </div>
   </div>
   <div class="card">
+    <div class="card-title">📅 Histórico Semanal de Horas</div>
+    <div id="dash-semanas"></div>
+  </div>
+  <div class="card">
     <div class="card-title">🎯 Meta Semanal de Horas</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
       <div class="field" style="margin:0;flex:1">
         <label>Meta (horas/semana)</label>
         <input type="number" id="meta-semanal-input" min="1" max="80" value="30" step="0.5" style="text-align:center">
@@ -880,7 +894,80 @@ window.importarJSON=async function(evt){
   reader.readAsText(file);evt.target.value='';
 };
 
-function render(){renderStats();renderDash();renderProgresso();renderRevisoes();renderHistorico(histFiltro);}
+function render(){renderStats();renderDash();renderProgresso();renderRevisoes();renderHistorico(histFiltro);renderHistoricoSemanal();}
+
+// ── Histórico Semanal de Horas ──
+function inicioSemana(isoDate){
+  const [y,m,d]=isoDate.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  const dow=dt.getDay()===0?6:dt.getDay()-1;
+  dt.setDate(dt.getDate()-dow);
+  return dt.toISOString().slice(0,10);
+}
+function horasSessao(s){return s.aulas*0.5+(s.paginas||0)/25+(s.q||0)*(2/60);}
+
+function renderHistoricoSemanal(){
+  const el=document.getElementById('dash-semanas');
+  if(!el)return;
+  const d=window._d;
+  const meta=parseFloat(document.getElementById('meta-semanal-input')?.value)||30;
+  const semAtual=inicioSemana(hoje());
+
+  // Agrupa por semana
+  const mapa={};
+  d.sessoes.forEach(s=>{
+    const k=inicioSemana(s.data);
+    mapa[k]=(mapa[k]||0)+horasSessao(s);
+  });
+
+  // Últimas 10 semanas
+  const semanas=[];
+  const base=new Date();
+  const dow=base.getDay()===0?6:base.getDay()-1;
+  base.setDate(base.getDate()-dow);
+  for(let i=9;i>=0;i--){
+    const dt=new Date(base);dt.setDate(base.getDate()-i*7);
+    const iso=dt.toISOString().slice(0,10);
+    const [y,m,dn]=iso.split('-').map(Number);
+    const fim=new Date(y,m-1,dn+6);
+    const lbl=String(dn).padStart(2,'0')+'/'+String(m).padStart(2,'0');
+    const lblFim=String(fim.getDate()).padStart(2,'0')+'/'+String(fim.getMonth()+1).padStart(2,'0');
+    semanas.push({iso,horas:mapa[iso]||0,lbl,lblFim});
+  }
+
+  const maxH=Math.max(...semanas.map(s=>s.horas),meta,1);
+  const metaPct=(meta/maxH)*100;
+
+  const cols=semanas.map((sem,i)=>{
+    const isAtual=sem.iso===semAtual;
+    const hPct=Math.min(100,(sem.horas/maxH)*100);
+    const cor=sem.horas>=meta?'#4aae6e':sem.horas>=meta*0.6?'#e8a24a':sem.horas>0?'#e07a52':'#1e2a3a';
+    const valCol=sem.horas>0?'<div class="week-bar-val" style="color:'+cor+'">'+sem.horas.toFixed(1)+'</div>':'<div class="week-bar-val" style="color:var(--muted)">·</div>';
+    return '<div class="week-bar-col'+(isAtual?' week-atual':'')+'">' +
+      valCol +
+      '<div class="week-bar-outer">' +
+        '<div class="week-meta-line" style="bottom:'+metaPct+'%"></div>' +
+        '<div class="week-bar-fill" style="height:'+Math.max(2,hPct)+'%;background:'+cor+'"></div>' +
+      '</div>' +
+      '<div class="week-bar-lbl">'+sem.lbl+'</div>' +
+    '</div>';
+  }).join('');
+
+  // Estatísticas resumo
+  const semsComEstudo=semanas.filter(s=>s.horas>0);
+  const mediaH=semsComEstudo.length>0?(semsComEstudo.reduce((a,s)=>a+s.horas,0)/semsComEstudo.length):0;
+  const melhorSem=semanas.reduce((a,b)=>b.horas>a.horas?b:a,semanas[0]);
+  const semsAcimaMeta=semanas.filter(s=>s.horas>=meta).length;
+
+  el.innerHTML=
+    '<div style="display:flex;align-items:flex-end;gap:4px;padding-bottom:8px">'+cols+'</div>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border);font-size:.62rem;color:var(--muted)">'+
+      '<span>Média: <strong style="color:var(--accent)">'+mediaH.toFixed(1)+'h</strong></span>'+
+      (melhorSem.horas>0?'<span>Melhor semana: <strong style="color:var(--success)">'+melhorSem.horas.toFixed(1)+'h</strong> ('+melhorSem.lbl+')</span>':'')+
+      '<span>Acima da meta: <strong style="color:var(--accent)">'+semsAcimaMeta+'/10</strong></span>'+
+      '<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:1px;background:rgba(232,162,74,.5);display:inline-block;border-top:1px dashed rgba(232,162,74,.5)"></span>meta '+meta+'h</span>'+
+    '</div>';
+}
 
 function renderStats(){
   const d=window._d;
@@ -967,6 +1054,7 @@ window.atualizarMeta=async function(){
   window._d.metaSemanal=meta;
   await window._salvar();
   renderMetaSemanal(window._d,window._d.sessoes.reduce((a,s)=>a+s.aulas*0.5+(s.paginas||0)/25 + (s.q||0)*(2/60),0));
+  renderHistoricoSemanal();
   showToast('✅ Meta atualizada!');
 };
 
@@ -1167,6 +1255,127 @@ window.salvarLinksErros = async function() {
   await window._salvar();
   fecharConfiguracaoLinks();
   showToast('✅ Links salvos!');
+};
+
+// ── Gerador do Relatório do Edital ──
+window.gerarRelatorioEdital = function(){
+  const d=window._d;
+  const gerado=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  let totalQ=0,totalAc=0,subsConcluidos=0,totalSubs=0;
+  DNAMES.forEach(nome=>{
+    DISC[nome].subs.forEach(sub=>{
+      totalSubs++;
+      const q=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.q,0);
+      const ac=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
+      totalQ+=q; totalAc+=ac;
+      const st=statusSub(nome,sub);
+      if(st.tipo==='ok')subsConcluidos++;
+    });
+  });
+  const acertoGeral=totalQ>0?Math.round(totalAc/totalQ*100):0;
+  const progGeral=totalEstimadoGeral();
+  const progPct=Math.round((progGeral.feito/progGeral.total)*100);
+
+  const corPrior={"MÁXIMA":"#e05252","ALTA":"#e07a52","MANUTENÇÃO":"#4aae6e"};
+
+  function secaoDisc(nome){
+    const disc=DISC[nome];
+    const qD=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.q,0);
+    const acD=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.ac,0);
+    const prog=calculoProgressoUnificado(nome);
+    const pct=Math.min(100,Math.round((prog.feito/prog.total)*100));
+    const acPct=qD>0?Math.round(acD/qD*100):null;
+    const corAcerto=acPct===null?'#888':acPct>=70?'#4aae6e':acPct>=50?'#e8a24a':'#e05252';
+
+    const subsHTML=disc.subs.map(sub=>{
+      const st=statusSub(nome,sub);
+      const qS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.q,0);
+      const acS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
+      const icone=st.tipo==='ok'?'✅':st.tipo==='warn'?'⏳':st.tipo==='notdef'?'⚠️':'○';
+      const cor=st.tipo==='ok'?'#4aae6e':st.tipo==='warn'?'#e8a24a':st.tipo==='notdef'?'#e8a24a':'#555';
+      const acStr=qS>0?Math.round(acS/qS*100)+'% ('+acS+'/'+qS+'q)':'—';
+      const corAc=qS>0?(acS/qS>=.7?'#4aae6e':acS/qS>=.5?'#e8a24a':'#e05252'):'#888';
+      return '<tr style="border-bottom:1px solid #1e2d3d">'+
+        '<td style="padding:7px 10px;color:'+cor+';font-size:13px;width:28px">'+icone+'</td>'+
+        '<td style="padding:7px 10px;font-size:13px;color:#dde6f0">'+sub+'</td>'+
+        '<td style="padding:7px 10px;text-align:center;font-size:13px;color:#888">'+( qS>0?qS:'—')+'</td>'+
+        '<td style="padding:7px 10px;text-align:center;font-size:13px;color:'+corAc+';font-weight:'+(qS>0?'600':'400')+'">'+acStr+'</td>'+
+      '</tr>';
+    }).join('');
+
+    return '<div style="margin-bottom:24px;border:1px solid #1e2d3d;border-radius:12px;overflow:hidden">'+
+      '<div style="background:#111820;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e2d3d">'+
+        '<div>'+
+          '<div style="font-family:Georgia,serif;font-size:1rem;font-weight:700;color:#e8a24a;margin-bottom:4px">'+nome+'</div>'+
+          '<span style="background:'+corPrior[disc.prior]+'22;color:'+corPrior[disc.prior]+';border:1px solid '+corPrior[disc.prior]+'44;border-radius:99px;font-size:11px;padding:1px 8px;font-weight:600">'+disc.prior+'</span>'+
+          '<span style="font-size:12px;color:#5a7080;margin-left:10px">Progresso: <strong style="color:#e8a24a">'+pct+'%</strong></span>'+
+        '</div>'+
+        '<div style="text-align:right">'+
+          (acPct!==null?
+            '<div style="font-size:1.6rem;font-weight:700;color:'+corAcerto+'">'+acPct+'%</div>'+
+            '<div style="font-size:11px;color:#5a7080">acerto ('+acD+'/'+qD+'q)</div>'
+           :'<div style="font-size:12px;color:#5a7080">sem questões<br>registradas</div>')+
+        '</div>'+
+      '</div>'+
+      '<div style="background:#111820;height:5px"><div style="height:100%;width:'+pct+'%;background:'+disc.cor+'"></div></div>'+
+      '<div style="background:#0a0e13">'+
+        '<table style="width:100%;border-collapse:collapse">'+
+          '<thead><tr style="background:#111820;border-bottom:1px solid #1e2d3d">'+
+            '<th style="padding:5px 10px;font-size:11px;color:#5a7080;text-align:left;width:28px"></th>'+
+            '<th style="padding:5px 10px;font-size:11px;color:#5a7080;text-align:left">Subtópico</th>'+
+            '<th style="padding:5px 10px;font-size:11px;color:#5a7080;text-align:center;width:65px">Questões</th>'+
+            '<th style="padding:5px 10px;font-size:11px;color:#5a7080;text-align:center;width:120px">Acerto</th>'+
+          '</tr></thead>'+
+          '<tbody>'+subsHTML+'</tbody>'+
+        '</table>'+
+      '</div>'+
+    '</div>';
+  }
+
+  const htmlDiscs=DNAMES.map(nome=>secaoDisc(nome)).join('');
+  const acertoCorGeral=acertoGeral>=70?'#4aae6e':acertoGeral>=50?'#e8a24a':'#e05252';
+
+  const html='<!DOCTYPE html><html lang="pt-BR"><head>'+
+    '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
+    '<title>Relatório Edital — TRT9</title>'+
+    '<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0e13;color:#dde6f0;font-family:monospace;padding:20px 16px 60px;max-width:860px;margin:0 auto}</style>'+
+    '</head><body>'+
+    '<div style="text-align:center;margin-bottom:28px;padding:24px;background:#111820;border:1px solid #1e2d3d;border-radius:14px">'+
+      '<div style="font-size:2rem;margin-bottom:8px">⚖️</div>'+
+      '<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#e8a24a;margin-bottom:4px">Conteúdo Programático — TRT9</div>'+
+      '<div style="font-size:12px;color:#5a7080;margin-bottom:16px">Analista Judiciário · Área Judiciária · FCC · Gerado em '+gerado+'</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'+
+        '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
+          '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+progPct+'%</div>'+
+          '<div style="font-size:10px;color:#5a7080;margin-top:2px">PROGRESSO</div></div>'+
+        '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
+          '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+subsConcluidos+'</div>'+
+          '<div style="font-size:10px;color:#5a7080;margin-top:2px">CONCLUÍDOS</div></div>'+
+        '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
+          '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+totalQ+'</div>'+
+          '<div style="font-size:10px;color:#5a7080;margin-top:2px">QUESTÕES</div></div>'+
+        '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
+          '<div style="font-size:1.5rem;font-weight:700;color:'+acertoCorGeral+'">'+(totalQ>0?acertoGeral+'%':'—')+'</div>'+
+          '<div style="font-size:10px;color:#5a7080;margin-top:2px">ACERTO GERAL</div></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 14px;background:#111820;border:1px solid #1e2d3d;border-radius:8px;margin-bottom:20px;font-size:11px;color:#a8bace">'+
+      '<span>✅ Concluído — revisões agendadas</span>'+
+      '<span>⏳ Em andamento</span>'+
+      '<span>⚠️ Estudado sem total definido</span>'+
+      '<span>○ Não iniciado</span>'+
+    '</div>'+
+    htmlDiscs+
+    '<div style="text-align:center;font-size:11px;color:#5a7080;margin-top:24px;padding-top:12px;border-top:1px solid #1e2d3d">'+
+      'TRT9 Painel de Estudos · '+gerado+
+    '</div></body></html>';
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  window.open(url,'_blank');
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  showToast('📋 Relatório aberto em nova aba!');
 };
 
 popularTodosSelects();
