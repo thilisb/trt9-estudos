@@ -1376,44 +1376,64 @@ window.gerarRelatorioEdital = function(){
     const acPct=qD>0?Math.round(acD/qD*100):null;
     const corAcerto=acPct===null?'#888':acPct>=70?'#4aae6e':acPct>=50?'#e8a24a':'#e05252';
 
+    // contagem de subtópicos por status
+    const scDisc={ok:0,warn:0,notdef:0,none:0};
+    disc.subs.forEach(sub=>{ const st=statusSub(nome,sub); scDisc[st.tipo]++; });
+    const totalSubsDisc=disc.subs.length;
+    const subsConclDiscStr=scDisc.ok+'/'+totalSubsDisc;
+    const corSubsConc=scDisc.ok===totalSubsDisc?'#4aae6e':scDisc.ok>0?'#e8a24a':'#5a7080';
+
     const subsHTML=disc.subs.map(sub=>{
       const st=statusSub(nome,sub);
       const qS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.q,0);
       const acS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
       const icone=st.tipo==='ok'?'✅':st.tipo==='warn'?'⏳':st.tipo==='notdef'?'⚠️':'○';
-      const cor=st.tipo==='ok'?'#4aae6e':st.tipo==='warn'?'#e8a24a':st.tipo==='notdef'?'#e8a24a':'#555';
+      const corIcone=st.tipo==='ok'?'#4aae6e':st.tipo==='warn'?'#e8a24a':st.tipo==='notdef'?'#e8a24a':'#3a4a5a';
+      const bgRow=st.tipo==='ok'?'rgba(74,174,110,0.04)':st.tipo==='warn'?'rgba(232,162,74,0.04)':'transparent';
       const acStr=qS>0?Math.round(acS/qS*100)+'% ('+acS+'/'+qS+'q)':'—';
       const corAc=qS>0?(acS/qS>=.7?'#4aae6e':acS/qS>=.5?'#e8a24a':'#e05252'):'#888';
-      return '<tr style="border-bottom:1px solid #1e2d3d">'+
-        '<td style="padding:7px 10px;color:'+cor+';font-size:13px;width:28px">'+icone+'</td>'+
+      const progPctSub=Math.round(Math.min(100, st.pct||0));
+      const miniBar=st.tipo!=='none'?
+        '<div style="width:48px;height:3px;background:#1e2d3d;border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:4px">'+
+          '<div style="height:100%;width:'+progPctSub+'%;background:'+disc.cor+';border-radius:99px"></div>'+
+        '</div>':'';
+      return '<tr style="border-bottom:1px solid #1a2530;background:'+bgRow+'">'+
+        '<td style="padding:7px 10px;color:'+corIcone+';font-size:14px;width:28px;text-align:center">'+icone+'</td>'+
         '<td style="padding:7px 10px;font-size:13px;color:#dde6f0">'+sub+'</td>'+
-        '<td style="padding:7px 10px;text-align:center;font-size:13px;color:#888">'+( qS>0?qS:'—')+'</td>'+
-        '<td style="padding:7px 10px;text-align:center;font-size:13px;color:'+corAc+';font-weight:'+(qS>0?'600':'400')+'">'+acStr+'</td>'+
+        '<td style="padding:7px 14px;text-align:center;font-size:12px;white-space:nowrap">'+
+          '<span style="color:'+corIcone+';font-weight:600">'+st.label+'</span>'+miniBar+
+        '</td>'+
+        '<td style="padding:7px 10px;text-align:center;font-size:12px;color:#888">'+( qS>0?qS:'—')+'</td>'+
+        '<td style="padding:7px 10px;text-align:center;font-size:12px;color:'+corAc+';font-weight:'+(qS>0?'600':'400')+'">'+acStr+'</td>'+
       '</tr>';
     }).join('');
 
-    return '<div style="margin-bottom:24px;border:1px solid #1e2d3d;border-radius:12px;overflow:hidden">'+
-      '<div style="background:#111820;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e2d3d">'+
-        '<div>'+
-          '<div style="font-family:Georgia,serif;font-size:1rem;font-weight:700;color:#e8a24a;margin-bottom:4px">'+nome+'</div>'+
-          '<span style="background:'+corPrior[disc.prior]+'22;color:'+corPrior[disc.prior]+';border:1px solid '+corPrior[disc.prior]+'44;border-radius:99px;font-size:11px;padding:1px 8px;font-weight:600">'+disc.prior+'</span>'+
-          '<span style="font-size:12px;color:#5a7080;margin-left:10px">Progresso: <strong style="color:#e8a24a">'+pct+'%</strong></span>'+
+    return '<div style="margin-bottom:24px;border:1px solid #1e2d3d;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.3)">'+
+      '<div style="background:linear-gradient(135deg,#111820 0%,#182030 100%);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e2d3d">'+
+        '<div style="flex:1">'+
+          '<div style="font-family:Georgia,serif;font-size:1rem;font-weight:700;color:#e8a24a;margin-bottom:6px">'+nome+'</div>'+
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+            '<span style="background:'+corPrior[disc.prior]+'22;color:'+corPrior[disc.prior]+';border:1px solid '+corPrior[disc.prior]+'44;border-radius:99px;font-size:10px;padding:2px 8px;font-weight:700">'+disc.prior+'</span>'+
+            '<span style="font-size:11px;color:#5a7080">Progresso: <strong style="color:#e8a24a">'+pct+'%</strong></span>'+
+            '<span style="font-size:11px;color:#5a7080">Subtópicos: <strong style="color:'+corSubsConc+'">'+subsConclDiscStr+'</strong></span>'+
+          '</div>'+
         '</div>'+
-        '<div style="text-align:right">'+
+        '<div style="text-align:right;min-width:80px">'+
           (acPct!==null?
             '<div style="font-size:1.6rem;font-weight:700;color:'+corAcerto+'">'+acPct+'%</div>'+
             '<div style="font-size:11px;color:#5a7080">acerto ('+acD+'/'+qD+'q)</div>'
-           :'<div style="font-size:12px;color:#5a7080">sem questões<br>registradas</div>')+
+           :'<div style="font-size:12px;color:#5a7080;line-height:1.6">sem questões<br>registradas</div>')+
         '</div>'+
       '</div>'+
-      '<div style="background:#111820;height:5px"><div style="height:100%;width:'+pct+'%;background:'+disc.cor+'"></div></div>'+
+      '<div style="height:6px;background:#0d1520"><div style="height:100%;width:'+pct+'%;background:'+disc.cor+';transition:width .5s;box-shadow:0 0 8px '+disc.cor+'66"></div></div>'+
       '<div style="background:#0a0e13">'+
         '<table style="width:100%;border-collapse:collapse">'+
-          '<thead><tr style="background:#111820;border-bottom:1px solid #1e2d3d">'+
-            '<th style="padding:5px 10px;font-size:11px;color:#5a7080;text-align:left;width:28px"></th>'+
-            '<th style="padding:5px 10px;font-size:11px;color:#5a7080;text-align:left">Subtópico</th>'+
-            '<th style="padding:5px 10px;font-size:11px;color:#5a7080;text-align:center;width:65px">Questões</th>'+
-            '<th style="padding:5px 10px;font-size:11px;color:#5a7080;text-align:center;width:120px">Acerto</th>'+
+          '<thead><tr style="background:#0f1922;border-bottom:1px solid #1e2d3d">'+
+            '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:left;width:28px;text-transform:uppercase;letter-spacing:.06em"></th>'+
+            '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:left;text-transform:uppercase;letter-spacing:.06em">Subtópico</th>'+
+            '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:center;text-transform:uppercase;letter-spacing:.06em">Status</th>'+
+            '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:center;width:55px;text-transform:uppercase;letter-spacing:.06em">Qs</th>'+
+            '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:center;width:130px;text-transform:uppercase;letter-spacing:.06em">Acerto</th>'+
           '</tr></thead>'+
           '<tbody>'+subsHTML+'</tbody>'+
         '</table>'+
@@ -1423,29 +1443,60 @@ window.gerarRelatorioEdital = function(){
 
   const htmlDiscs=DNAMES.map(nome=>secaoDisc(nome)).join('');
   const acertoCorGeral=acertoGeral>=70?'#4aae6e':acertoGeral>=50?'#e8a24a':'#e05252';
+  const subsConclPct=Math.round((subsConcluidos/totalSubs)*100);
+  const corSubsConclGeral=subsConcluidos===totalSubs?'#4aae6e':subsConcluidos>0?'#e8a24a':'#5a7080';
+
+  // mini resumo por prioridade
+  const priorConc={MÁXIMA:0,ALTA:0,MANUTENÇÃO:0};
+  const priorTotal={MÁXIMA:0,ALTA:0,MANUTENÇÃO:0};
+  DNAMES.forEach(nome=>{
+    const prior=DISC[nome].prior;
+    DISC[nome].subs.forEach(sub=>{
+      priorTotal[prior]=(priorTotal[prior]||0)+1;
+      if(statusSub(nome,sub).tipo==='ok') priorConc[prior]=(priorConc[prior]||0)+1;
+    });
+  });
 
   const html='<!DOCTYPE html><html lang="pt-BR"><head>'+
     '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
     '<title>Relatório Edital — TRT9</title>'+
-    '<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0e13;color:#dde6f0;font-family:monospace;padding:20px 16px 60px;max-width:860px;margin:0 auto}</style>'+
+    '<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0e13;color:#dde6f0;font-family:monospace;padding:20px 16px 60px;max-width:860px;margin:0 auto}@media print{body{padding:10px}.no-print{display:none}}</style>'+
     '</head><body>'+
-    '<div style="text-align:center;margin-bottom:28px;padding:24px;background:#111820;border:1px solid #1e2d3d;border-radius:14px">'+
-      '<div style="font-size:2rem;margin-bottom:8px">⚖️</div>'+
-      '<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#e8a24a;margin-bottom:4px">Conteúdo Programático — TRT9</div>'+
-      '<div style="font-size:12px;color:#5a7080;margin-bottom:16px">Analista Judiciário · Área Judiciária · FCC · Gerado em '+gerado+'</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'+
+    '<div style="text-align:center;margin-bottom:24px;padding:24px 24px 20px;background:linear-gradient(135deg,#111820 0%,#0f1c2e 100%);border:1px solid #1e2d3d;border-radius:14px">'+
+      '<div style="font-size:2.2rem;margin-bottom:8px">⚖️</div>'+
+      '<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#e8a24a;margin-bottom:2px">Conteúdo Programático — TRT9</div>'+
+      '<div style="font-size:12px;color:#5a7080;margin-bottom:20px">Analista Judiciário · Área Judiciária · FCC · Gerado em '+gerado+'</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">'+
         '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
           '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+progPct+'%</div>'+
-          '<div style="font-size:10px;color:#5a7080;margin-top:2px">PROGRESSO</div></div>'+
+          '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">PROGRESSO</div></div>'+
         '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
-          '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+subsConcluidos+'</div>'+
-          '<div style="font-size:10px;color:#5a7080;margin-top:2px">CONCLUÍDOS</div></div>'+
+          '<div style="font-size:1.5rem;font-weight:700;color:'+corSubsConclGeral+'">'+subsConcluidos+'<span style="font-size:.85rem;color:#5a7080">/'+totalSubs+'</span></div>'+
+          '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">SUBTÓPICOS CONC.</div></div>'+
         '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
           '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+totalQ+'</div>'+
-          '<div style="font-size:10px;color:#5a7080;margin-top:2px">QUESTÕES</div></div>'+
+          '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">QUESTÕES</div></div>'+
         '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
           '<div style="font-size:1.5rem;font-weight:700;color:'+acertoCorGeral+'">'+(totalQ>0?acertoGeral+'%':'—')+'</div>'+
-          '<div style="font-size:10px;color:#5a7080;margin-top:2px">ACERTO GERAL</div></div>'+
+          '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">ACERTO GERAL</div></div>'+
+      '</div>'+
+      '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px 14px;margin-bottom:14px;text-align:left">'+
+        '<div style="font-size:10px;color:#5a7080;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Subtópicos concluídos por prioridade</div>'+
+        '<div style="display:flex;flex-direction:column;gap:6px">'+
+          ['MÁXIMA','ALTA','MANUTENÇÃO'].map(p=>{
+            const cor=corPrior[p];
+            const c=priorConc[p]||0;
+            const t=priorTotal[p]||1;
+            const pPct=Math.round(c/t*100);
+            return '<div style="display:flex;align-items:center;gap:8px">'+
+              '<span style="font-size:10px;color:'+cor+';min-width:90px;font-weight:600">'+p+'</span>'+
+              '<div style="flex:1;height:5px;background:#1e2d3d;border-radius:99px;overflow:hidden">'+
+                '<div style="height:100%;width:'+pPct+'%;background:'+cor+';border-radius:99px"></div>'+
+              '</div>'+
+              '<span style="font-size:10px;color:#a8bace;min-width:50px;text-align:right">'+c+'/'+t+' ('+pPct+'%)</span>'+
+            '</div>';
+          }).join('')+
+        '</div>'+
       '</div>'+
     '</div>'+
     '<div style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 14px;background:#111820;border:1px solid #1e2d3d;border-radius:8px;margin-bottom:20px;font-size:11px;color:#a8bace">'+
