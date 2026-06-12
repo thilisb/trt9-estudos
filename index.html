@@ -380,6 +380,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 
 <div class="page" id="page-progresso">
   <div class="card">
+    <div class="card-title">✏️ Editar Total de Aulas / Páginas</div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:12px;line-height:1.7">Corrija o total de um subtópico a qualquer momento — útil quando errou na primeira vez ou o material mudou.</p>
+    <div class="form-grid">
+      <div class="field"><label>Disciplina</label><select id="edit-disc" onchange="popularSubsEdit()"><option value="">Selecione...</option></select></div>
+      <div class="field"><label>Subtópico</label><select id="edit-sub" onchange="mostrarTotalAtual()"><option value="">Selecione a disciplina primeiro</option></select></div>
+    </div>
+    <div id="edit-total-atual" style="display:none;background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius-xs);padding:10px 12px;font-size:.7rem;color:var(--text2);line-height:1.8;margin-bottom:10px"></div>
+    <div class="form-grid" id="edit-total-fields" style="display:none">
+      <div class="field"><label>Novo total de aulas <span style="color:var(--muted);font-size:.55rem">(deixe 0 para não alterar)</span></label><input type="number" id="edit-aulastotal" min="0" placeholder="0"></div>
+      <div class="field"><label>Novo total de páginas <span style="color:var(--muted);font-size:.55rem">(deixe 0 para não alterar)</span></label><input type="number" id="edit-paginastotal" min="0" placeholder="0"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px" id="edit-total-btns" style="display:none">
+      <button class="btn" id="edit-salvar-btn" onclick="salvarEdicaoTotal()" style="display:none">Salvar alteração →</button>
+      <button class="btn btn-danger btn-sm" id="edit-limpar-btn" onclick="limparTotalSub()" style="display:none;margin-top:10px">🗑 Limpar total</button>
+    </div>
+  </div>
+  <div class="card">
     <div class="card-title">📚 Progresso por Disciplina e Subtópico</div>
     <div class="prog-legenda">
       <div class="prog-legenda-item"><span class="sub-status sub-status-ok">✅ concluído</span> Subtópico finalizado — revisão agendada</div>
@@ -388,6 +405,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <div class="prog-legenda-item"><span class="sub-status sub-status-none">○ não iniciado</span> Nenhuma sessão registrada</div>
     </div>
     <div id="prog-list"></div>
+  </div>
   </div>
 </div>
 
@@ -682,7 +700,7 @@ function showToast(msg,tipo='ok'){
 }
 
 function popularTodosSelects(){
-  ['f-disc'].forEach(id=>{
+  ['f-disc','edit-disc'].forEach(id=>{
     const sel=document.getElementById(id);
     if(!sel)return;
     sel.innerHTML='<option value="">Selecione...</option>';
@@ -716,11 +734,11 @@ window.mostrarInfoSub=function(){
   const fAulasTotal=document.getElementById('f-aulastotal');
   const fPagsTotal=document.getElementById('f-paginastotal');
 
-  if(totalAulas>0) fAulasTotal.placeholder='Já definido: '+totalAulas+' aul';
+  if(totalAulas>0) fAulasTotal.placeholder='Atual: '+totalAulas+' aul (sobrescreve se preencher)';
   else fAulasTotal.placeholder='Branco se já informou';
 
   if(fPagsTotal) {
-    if(totalPags>0) fPagsTotal.placeholder='Já definido: '+totalPags+' pág';
+    if(totalPags>0) fPagsTotal.placeholder='Atual: '+totalPags+' pág (sobrescreve se preencher)';
     else fPagsTotal.placeholder='Branco se já informou';
   }
 
@@ -759,11 +777,8 @@ window.registrarSessao=async function(){
   if(aulas===0&&q===0&&paginas===0){showToast('Informe aulas, páginas ou questões','err');return;}
   if(ac>q){showToast('Acertos > questões','err');return;}
 
-  if(aulasTotal>0) window._d.subTotais[sk(disc,sub)]=aulasTotal;
-  if(paginasTotal>0) {
-    if(!window._d.subTotaisPaginas) window._d.subTotaisPaginas = {};
-    window._d.subTotaisPaginas[sk(disc,sub)]=paginasTotal;
-  }
+  if(aulasTotal>0){ window._d.subTotais[sk(disc,sub)]=aulasTotal; if(!window._d.subTotaisPaginas)window._d.subTotaisPaginas={}; delete window._d.subTotaisPaginas[sk(disc,sub)]; }
+  if(paginasTotal>0){ if(!window._d.subTotaisPaginas)window._d.subTotaisPaginas={}; window._d.subTotaisPaginas[sk(disc,sub)]=paginasTotal; delete window._d.subTotais[sk(disc,sub)]; }
 
   window._d.sessoes.unshift({id:Date.now(),data,disc,sub,aulas,paginas,q,ac,obs});
 
@@ -812,7 +827,80 @@ window.registrarSessao=async function(){
   render();
 };
 
-function agendarRevisoes(disc,sub,dataBase){
+window.popularSubsEdit=function(){
+  const disc=document.getElementById('edit-disc').value;
+  const sel=document.getElementById('edit-sub');
+  sel.innerHTML='<option value="">Selecione o subtópico</option>';
+  if(disc&&DISC[disc])DISC[disc].subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  document.getElementById('edit-total-atual').style.display='none';
+  document.getElementById('edit-total-fields').style.display='none';
+  document.getElementById('edit-salvar-btn').style.display='none';
+  document.getElementById('edit-limpar-btn').style.display='none';
+};
+
+window.mostrarTotalAtual=function(){
+  const disc=document.getElementById('edit-disc').value;
+  const sub=document.getElementById('edit-sub').value;
+  const box=document.getElementById('edit-total-atual');
+  const fields=document.getElementById('edit-total-fields');
+  const salvarBtn=document.getElementById('edit-salvar-btn');
+  const limparBtn=document.getElementById('edit-limpar-btn');
+  if(!disc||!sub){box.style.display='none';fields.style.display='none';salvarBtn.style.display='none';limparBtn.style.display='none';return;}
+  const key=sk(disc,sub);
+  const tA=window._d.subTotais[key]||0;
+  const tP=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
+  let html='';
+  if(tA>0) html='<strong>Total atual:</strong> '+tA+' aulas';
+  else if(tP>0) html='<strong>Total atual:</strong> '+tP+' páginas';
+  else html='<span style="color:var(--accent)">⚠️ Nenhum total definido para este subtópico ainda.</span>';
+  box.innerHTML=html;
+  box.style.display='block';
+  fields.style.display='grid';
+  document.getElementById('edit-aulastotal').value='';
+  document.getElementById('edit-paginastotal').value='';
+  salvarBtn.style.display='block';
+  limparBtn.style.display=(tA>0||tP>0)?'block':'none';
+};
+
+window.salvarEdicaoTotal=async function(){
+  const disc=document.getElementById('edit-disc').value;
+  const sub=document.getElementById('edit-sub').value;
+  if(!disc||!sub){showToast('Selecione disciplina e subtópico','err');return;}
+  const novasAulas=parseInt(document.getElementById('edit-aulastotal').value)||0;
+  const novasPags=parseInt(document.getElementById('edit-paginastotal').value)||0;
+  if(novasAulas===0&&novasPags===0){showToast('Informe o novo total (aulas ou páginas)','err');return;}
+  const key=sk(disc,sub);
+  if(novasAulas>0){
+    window._d.subTotais[key]=novasAulas;
+    if(!window._d.subTotaisPaginas)window._d.subTotaisPaginas={};
+    delete window._d.subTotaisPaginas[key];
+  } else if(novasPags>0){
+    if(!window._d.subTotaisPaginas)window._d.subTotaisPaginas={};
+    window._d.subTotaisPaginas[key]=novasPags;
+    delete window._d.subTotais[key];
+  }
+  await window._salvar();
+  render();
+  mostrarTotalAtual();
+  showToast('✅ Total atualizado!');
+};
+
+window.limparTotalSub=async function(){
+  const disc=document.getElementById('edit-disc').value;
+  const sub=document.getElementById('edit-sub').value;
+  if(!disc||!sub)return;
+  const key=sk(disc,sub);
+  delete window._d.subTotais[key];
+  if(window._d.subTotaisPaginas)delete window._d.subTotaisPaginas[key];
+  // Remove revisões associadas pois o subtópico pode não estar mais concluído
+  window._d.revisoes=window._d.revisoes.filter(r=>!(r.disc===disc&&r.sub===sub));
+  await window._salvar();
+  render();
+  mostrarTotalAtual();
+  showToast('🗑 Total removido. Revisões deste subtópico também foram canceladas.','warn');
+};
+
+
   const [by,bm,bd]=dataBase.split('-').map(Number);
   [[7,'R1 +7 dias'],[30,'R2 +30 dias'],[90,'R3 +90 dias']].forEach(([off,lbl])=>{
     const d=new Date(by,bm-1,bd);
