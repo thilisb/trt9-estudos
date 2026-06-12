@@ -406,7 +406,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     </div>
     <div id="prog-list"></div>
   </div>
-  </div>
 </div>
 
 <div class="page" id="page-revisoes">
@@ -900,7 +899,7 @@ window.limparTotalSub=async function(){
   showToast('🗑 Total removido. Revisões deste subtópico também foram canceladas.','warn');
 };
 
-
+function agendarRevisoes(disc,sub,dataBase){
   const [by,bm,bd]=dataBase.split('-').map(Number);
   [[7,'R1 +7 dias'],[30,'R2 +30 dias'],[90,'R3 +90 dias']].forEach(([off,lbl])=>{
     const d=new Date(by,bm-1,bd);
