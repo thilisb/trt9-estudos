@@ -182,6 +182,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 .acerto-bom{color:var(--success);font-weight:600;}
 .acerto-ok{color:var(--accent);font-weight:600;}
 .acerto-ruim{color:var(--danger);font-weight:600;}
+.badge-rev{display:inline-flex;align-items:center;gap:3px;font-size:.55rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:rgba(100,160,255,.13);color:#7ab4ff;border:1px solid rgba(100,160,255,.3);border-radius:99px;padding:2px 7px;line-height:1.4;flex-shrink:0;}
+.hist-item.is-rev{border-left:3px solid rgba(100,160,255,.45);}
+.toggle-rev{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:.7rem;color:var(--text2);padding:8px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-xs);transition:border-color .2s,background .2s;}
+.toggle-rev:hover{border-color:rgba(100,160,255,.4);}
+.toggle-rev input[type=checkbox]{width:15px;height:15px;accent-color:#7ab4ff;cursor:pointer;flex-shrink:0;}
+.toggle-rev.checked{border-color:rgba(100,160,255,.4);background:rgba(100,160,255,.07);color:#7ab4ff;}
 
 /* ── Filtros ── */
 .filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
@@ -373,6 +379,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       <div class="field"><label>Questões feitas</label><input type="number" id="f-q" min="0" placeholder="0"></div>
       <div class="field"><label>Questões corretas</label><input type="number" id="f-ac" min="0" placeholder="0"></div>
       <div class="field field-full"><label>Observações / dúvidas</label><input type="text" id="f-obs" placeholder="Ex: dificuldade com prescrição intercorrente"></div>
+      <div class="field field-full">
+        <label class="toggle-rev" id="toggle-rev-label" onclick="toggleRevLabel()">
+          <input type="checkbox" id="f-rev">
+          <span>🔁 Esta sessão é uma <strong>revisão</strong></span>
+        </label>
+      </div>
     </div>
     <button class="btn" onclick="registrarSessao()">Registrar sessão →</button>
   </div>
@@ -759,6 +771,13 @@ window.mostrarInfoSub=function(){
   box.style.display='block';
 };
 
+window.toggleRevLabel=function(){
+  const cb=document.getElementById('f-rev');
+  const lbl=document.getElementById('toggle-rev-label');
+  // checkbox toggles naturally via click; just sync class
+  setTimeout(()=>{ lbl.classList.toggle('checked', cb.checked); }, 0);
+};
+
 window.registrarSessao=async function(){
   const data=document.getElementById('f-data').value||hoje();
   const disc=document.getElementById('f-disc').value;
@@ -770,6 +789,7 @@ window.registrarSessao=async function(){
   const q=parseInt(document.getElementById('f-q').value)||0;
   const ac=parseInt(document.getElementById('f-ac').value)||0;
   const obs=document.getElementById('f-obs').value.trim();
+  const rev=document.getElementById('f-rev').checked;
 
   if(!disc){showToast('Selecione a disciplina','err');return;}
   if(!sub){showToast('Selecione o subtópico','err');return;}
@@ -779,7 +799,9 @@ window.registrarSessao=async function(){
   if(aulasTotal>0){ window._d.subTotais[sk(disc,sub)]=aulasTotal; if(!window._d.subTotaisPaginas)window._d.subTotaisPaginas={}; delete window._d.subTotaisPaginas[sk(disc,sub)]; }
   if(paginasTotal>0){ if(!window._d.subTotaisPaginas)window._d.subTotaisPaginas={}; window._d.subTotaisPaginas[sk(disc,sub)]=paginasTotal; delete window._d.subTotais[sk(disc,sub)]; }
 
-  window._d.sessoes.unshift({id:Date.now(),data,disc,sub,aulas,paginas,q,ac,obs});
+  const sessaoObj={id:Date.now(),data,disc,sub,aulas,paginas,q,ac,obs};
+  if(rev) sessaoObj.rev=true;
+  window._d.sessoes.unshift(sessaoObj);
 
   const key=sk(disc,sub);
   const totalDefAulas=window._d.subTotais[key]||0;
@@ -820,6 +842,8 @@ window.registrarSessao=async function(){
   document.getElementById('f-aulastotal').placeholder='Branco se já informou';
   if(document.getElementById('f-paginastotal')) document.getElementById('f-paginastotal').placeholder='Branco se já informou';
   document.getElementById('sub-info-box').style.display='none';
+  const revEl=document.getElementById('f-rev');
+  if(revEl){revEl.checked=false;document.getElementById('toggle-rev-label').classList.remove('checked');}
 
   await window._salvar();
   showToast(toastMsg);
@@ -1272,7 +1296,8 @@ function renderHistorico(filtro){
     const totalDef=window._d.subTotais[key]||0;
     const aulasAcc=window._d.sessoes.filter(x=>x.disc===s.disc&&x.sub===s.sub).reduce((a,x)=>a+x.aulas,0);
     const subTag=totalDef>0?'<span style="font-size:.6rem;color:var(--muted)"> · '+Math.min(aulasAcc,totalDef)+'/'+totalDef+'aul</span>':'';
-    return '<div class="hist-item"><div class="hist-top"><span class="hist-disc">'+s.disc+'</span><div style="display:flex;align-items:center;gap:6px"><span class="hist-date">'+fmtD(s.data)+'</span><button class="btn btn-sm btn-danger" onclick="deletarSessao('+s.id+')">✕</button></div></div><div class="hist-sub">'+s.sub+subTag+'</div><div class="hist-nums"><span>'+s.aulas+'aul</span>'+(s.paginas?'<span>'+s.paginas+'págs</span>':'')+'<span>'+s.q+'q</span>'+(pct!==null?'<span class="'+cls+'">'+pct+'% ('+s.ac+'/'+s.q+')</span>':'')+(s.obs?'<span style="color:var(--muted)">📝 '+s.obs+'</span>':'')+'</div></div>';
+    const revBadge=s.rev?'<span class="badge-rev">🔁 revisão</span>':'';
+    return '<div class="hist-item'+(s.rev?' is-rev':'')+'"><div class="hist-top"><span class="hist-disc">'+s.disc+'</span><div style="display:flex;align-items:center;gap:6px">'+revBadge+'<span class="hist-date">'+fmtD(s.data)+'</span><button class="btn btn-sm btn-danger" onclick="deletarSessao('+s.id+')">✕</button></div></div><div class="hist-sub">'+s.sub+subTag+'</div><div class="hist-nums"><span>'+s.aulas+'aul</span>'+(s.paginas?'<span>'+s.paginas+'págs</span>':'')+'<span>'+s.q+'q</span>'+(pct!==null?'<span class="'+cls+'">'+pct+'% ('+s.ac+'/'+s.q+')</span>':'')+(s.obs?'<span style="color:var(--muted)">📝 '+s.obs+'</span>':'')+'</div></div>';
   }).join('');
 }
 
