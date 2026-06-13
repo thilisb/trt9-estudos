@@ -548,14 +548,20 @@ onAuthStateChanged(auth, user => {
   else { mostrarLogin(); }
 });
 
+let _loginEmAndamento = false;
 window.loginGoogle = async function(){
+  if(_loginEmAndamento) return;
+  _loginEmAndamento = true;
   try{
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
   }catch(e){
-    if(e.code !== 'auth/popup-closed-by-user'){
+    const ignorar = ['auth/popup-closed-by-user','auth/cancelled-popup-request'];
+    if(!ignorar.includes(e.code)){
       alert('Erro ao fazer login: ' + e.message);
     }
+  } finally {
+    _loginEmAndamento = false;
   }
 };
 
