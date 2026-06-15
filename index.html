@@ -357,6 +357,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
     <div style="font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center">Horas contam aulas (0,5h) + páginas (25/h) + questões (2 min/q)</div>
   </div>
   <div class="card">
+    <div class="card-title">🔁 Desempenho nas Revisões</div>
+    <div id="dash-rev-metrics"></div>
+  </div>
+  <div class="card">
     <div class="card-title">📚 Progresso por disciplina</div>
     <div id="dash-disc"></div>
   </div>
@@ -660,8 +664,9 @@ function calculoProgressoUnificado(nome) {
     const tA = window._d.subTotais[key] || 0;
     const tP = window._d.subTotaisPaginas ? window._d.subTotaisPaginas[key] || 0 : 0;
     
-    const aF = window._d.sessoes.filter(s => s.disc === nome && s.sub === sub).reduce((a,s) => a + s.aulas, 0);
-    const pF = window._d.sessoes.filter(s => s.disc === nome && s.sub === sub).reduce((a,s) => a + (s.paginas||0), 0);
+    // Exclui sessões marcadas como revisão da contagem de progresso
+    const aF = window._d.sessoes.filter(s => s.disc === nome && s.sub === sub && !s.rev).reduce((a,s) => a + s.aulas, 0);
+    const pF = window._d.sessoes.filter(s => s.disc === nome && s.sub === sub && !s.rev).reduce((a,s) => a + (s.paginas||0), 0);
 
     let pesoSub = 0, feitoSub = 0;
 
@@ -744,8 +749,9 @@ window.mostrarInfoSub=function(){
   const key=sk(disc,sub);
   const totalAulas=window._d.subTotais[key]||0;
   const totalPags=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
-  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
-  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+(s.paginas||0),0);
+  // Exclui sessões de revisão do cálculo de progresso exibido
+  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub&&!s.rev).reduce((a,s)=>a+s.aulas,0);
+  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub&&!s.rev).reduce((a,s)=>a+(s.paginas||0),0);
   const temRevisao=window._d.revisoes.some(r=>r.disc===disc&&r.sub===sub);
 
   const fAulasTotal=document.getElementById('f-aulastotal');
@@ -809,11 +815,24 @@ window.registrarSessao=async function(){
   if(rev) sessaoObj.rev=true;
   window._d.sessoes.unshift(sessaoObj);
 
+  // Se é revisão, marcar automaticamente a revisão agendada mais próxima pendente deste subtópico
+  let _revAutoMarcada=null;
+  if(rev){
+    const revsSubPendentes=window._d.revisoes
+      .filter(r=>r.disc===disc&&r.sub===sub&&!r.feita)
+      .sort((a,b)=>a.data.localeCompare(b.data));
+    if(revsSubPendentes.length>0){
+      revsSubPendentes[0].feita=true;
+      _revAutoMarcada=revsSubPendentes[0];
+    }
+  }
+
   const key=sk(disc,sub);
   const totalDefAulas=window._d.subTotais[key]||0;
   const totalDefPags=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
-  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
-  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+(s.paginas||0),0);
+  // Exclui sessões de revisão da contagem de progresso para verificar conclusão
+  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub&&!s.rev).reduce((a,s)=>a+s.aulas,0);
+  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub&&!s.rev).reduce((a,s)=>a+(s.paginas||0),0);
   const jaTemRevisao=window._d.revisoes.some(r=>r.disc===disc&&r.sub===sub);
 
   let concluido = false;
@@ -827,7 +846,10 @@ window.registrarSessao=async function(){
 
   let toastMsg='✅ Sessão registrada!';
 
-  if(concluido && !jaTemRevisao){
+  if(rev){
+    if(_revAutoMarcada) toastMsg='🔁 Revisão concluída automaticamente! ('+_revAutoMarcada.label+')';
+    else toastMsg='🔁 Sessão de revisão registrada!';
+  } else if(concluido && !jaTemRevisao){
       agendarRevisoes(disc,sub,data);
       toastMsg='🎯 Subtópico concluído! Revisões agendadas (+7, +30, +90 dias)';
   } else if (concluido && jaTemRevisao) {
@@ -982,8 +1004,8 @@ window.deletarSessao=async function(id){
     const key=sk(sessao.disc,sessao.sub);
     const totalAulas=window._d.subTotais[key]||0;
     const totalPags=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
-    const aulasRestantes=window._d.sessoes.filter(s=>s.disc===sessao.disc&&s.sub===sessao.sub).reduce((a,s)=>a+s.aulas,0);
-    const pagsRestantes=window._d.sessoes.filter(s=>s.disc===sessao.disc&&s.sub===sessao.sub).reduce((a,s)=>a+(s.paginas||0),0);
+    const aulasRestantes=window._d.sessoes.filter(s=>s.disc===sessao.disc&&s.sub===sessao.sub&&!s.rev).reduce((a,s)=>a+s.aulas,0);
+    const pagsRestantes=window._d.sessoes.filter(s=>s.disc===sessao.disc&&s.sub===sessao.sub&&!s.rev).reduce((a,s)=>a+(s.paginas||0),0);
 
     let aindaConcluido = false;
     if(totalAulas>0 && aulasRestantes>=totalAulas) aindaConcluido = true;
@@ -1181,6 +1203,47 @@ function renderDash(){
   const ru=d.revisoes.filter(r=>!r.feita&&diasAte(r.data)<=0).slice(0,4);
   document.getElementById('dash-rev').innerHTML=ru.length===0?'<div class="empty">Sem revisões urgentes 🎉</div>'
     :ru.map(r=>'<div class="rev-item urgente" style="margin-bottom:5px"><div><div style="font-size:.74rem;font-weight:500">'+r.disc+'</div><div style="font-size:.63rem;color:var(--muted)">'+r.sub+' · '+r.label+'</div></div><button class="btn btn-sm btn-ghost" onclick="marcarRevisao('+r.id+')">✓</button></div>').join('');
+  // ── Card: desempenho nas revisões ──
+  const todasRevSess=window._d.sessoes.filter(s=>s.rev);
+  const todasEstSess=window._d.sessoes.filter(s=>!s.rev);
+  const qRev=todasRevSess.reduce((a,s)=>a+s.q,0);
+  const acRev=todasRevSess.reduce((a,s)=>a+s.ac,0);
+  const qEst=todasEstSess.reduce((a,s)=>a+s.q,0);
+  const acEst=todasEstSess.reduce((a,s)=>a+s.ac,0);
+  const pctRev=qRev>0?Math.round(acRev/qRev*100):null;
+  const pctEst=qEst>0?Math.round(acEst/qEst*100):null;
+  const revCount=todasRevSess.length;
+  const revFeitas=window._d.revisoes.filter(r=>r.feita).length;
+  const revPend=window._d.revisoes.filter(r=>!r.feita).length;
+  const corRev=pctRev===null?'var(--muted)':pctRev>=70?'var(--success)':pctRev>=50?'var(--accent)':'var(--danger)';
+  const corEst=pctEst===null?'var(--muted)':pctEst>=70?'var(--success)':pctEst>=50?'var(--accent)':'var(--danger)';
+  const gap=pctRev!==null&&pctEst!==null?pctRev-pctEst:null;
+  const gapStr=gap===null?'—':(gap>=0?'+':'')+gap+'pp';
+  const gapCor=gap===null?'var(--muted)':gap>=0?'var(--success)':'var(--danger)';
+  document.getElementById('dash-rev-metrics').innerHTML=
+    revCount===0
+    ? '<div class="empty" style="font-size:.72rem">Nenhuma sessão de revisão ainda. Marque "Esta sessão é uma revisão" ao registrar.</div>'
+    : '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
+        '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px;text-align:center">'+
+          '<div style="font-size:1.4rem;font-weight:700;color:'+corEst+'">'+(pctEst!==null?pctEst+'%':'—')+'</div>'+
+          '<div style="font-size:.6rem;color:var(--muted);margin-top:2px">1º estudo</div>'+
+          '<div style="font-size:.58rem;color:var(--muted)">'+qEst+'q</div>'+
+        '</div>'+
+        '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px;text-align:center">'+
+          '<div style="font-size:1.4rem;font-weight:700;color:'+corRev+'">'+(pctRev!==null?pctRev+'%':'—')+'</div>'+
+          '<div style="font-size:.6rem;color:var(--muted);margin-top:2px">revisões</div>'+
+          '<div style="font-size:.58rem;color:var(--muted)">'+qRev+'q · '+revCount+' sessões</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-xs);font-size:.65rem">'+
+        '<span style="color:var(--muted)">Δ revisão vs. estudo</span>'+
+        '<span style="font-weight:700;color:'+gapCor+'">'+gapStr+'</span>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-xs);font-size:.65rem;margin-top:6px">'+
+        '<span style="color:var(--muted)">Revisões agendadas concluídas</span>'+
+        '<span style="color:var(--text2)"><strong style="color:var(--success)">'+revFeitas+'</strong> feitas · <strong style="color:var(--accent)">'+revPend+'</strong> pendentes</span>'+
+      '</div>';
+
   document.getElementById('dash-disc').innerHTML='<div>'+DNAMES.map(nome=>{
     const disc=DISC[nome];
     const prog = calculoProgressoUnificado(nome);
@@ -1198,8 +1261,9 @@ function statusSub(disc, sub){
   const key=sk(disc,sub);
   const totalAulas=window._d.subTotais[key]||0;
   const totalPags=window._d.subTotaisPaginas?window._d.subTotaisPaginas[key]||0:0;
-  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+s.aulas,0);
-  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub).reduce((a,s)=>a+(s.paginas||0),0);
+  // Exclui sessões de revisão do cálculo de progresso do subtópico
+  const aulasFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub&&!s.rev).reduce((a,s)=>a+s.aulas,0);
+  const pagsFeitas=window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub&&!s.rev).reduce((a,s)=>a+(s.paginas||0),0);
 
   if(aulasFeitas===0 && pagsFeitas===0) return {tipo:'none', label:'○ não iniciado', pct:0};
   if(totalAulas===0 && totalPags===0) return {tipo:'notdef', label:'⚠️ sem total', pct:0};
@@ -1241,16 +1305,19 @@ function renderProgresso(){
     const subs=disc.subs.map(sub=>{
       const st=statusSub(nome,sub);
       const statusClass='sub-status sub-status-'+st.tipo;
-      const qS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.q,0);
-      const aS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
-      const aP=qS>0?Math.round(aS/qS*100)+'%':'—';
-      const corA=qS>0?(aS/qS>=.7?'var(--success)':aS/qS>=.5?'var(--accent)':'var(--danger)'):'var(--muted)';
+      const estSess=sessoesEstudo(nome,sub);
+      const revSess=sessoesRevisao(nome,sub);
+      const acEst=acertoSessoes(estSess);
+      const acRev=acertoSessoes(revSess);
+      const corA=acEst?(acEst.pct>=70?'var(--success)':acEst.pct>=50?'var(--accent)':'var(--danger)'):'var(--muted)';
+      const corR=acRev?(acRev.pct>=70?'var(--success)':acRev.pct>=50?'var(--accent)':'var(--danger)'):'var(--muted)';
       const pS = Math.min(100, Math.round(st.pct || 0));
+      const revBadgeSub=acRev?'<span style="font-size:.55rem;background:rgba(100,160,255,.13);color:#7ab4ff;border:1px solid rgba(100,160,255,.3);border-radius:99px;padding:1px 5px;margin-left:4px">🔁 '+acRev.pct+'%</span>':'';
       return '<div class="sub-item">'+
-        '<div class="sub-name">'+sub+'</div>'+
+        '<div class="sub-name">'+sub+revBadgeSub+'</div>'+
         '<span class="'+statusClass+'">'+st.label+'</span>'+
         '<div class="sub-bw"><div class="sub-bar"><div class="sub-bar-fill" style="width:'+pS+'%;background:'+disc.cor+'"></div></div></div>'+
-        '<div style="font-size:.63rem;color:'+corA+';min-width:28px;text-align:right">'+aP+'</div>'+
+        '<div style="font-size:.63rem;color:'+corA+';min-width:28px;text-align:right">'+(acEst?acEst.pct+'%':'—')+'</div>'+
       '</div>';
     }).join('');
 
@@ -1381,13 +1448,16 @@ window.gerarRelatorioEdital = function(){
   const d=window._d;
   const gerado=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
-  let totalQ=0,totalAc=0,subsConcluidos=0,totalSubs=0;
+  let totalQ=0,totalAc=0,totalQRev=0,totalAcRev=0,subsConcluidos=0,totalSubs=0;
   DNAMES.forEach(nome=>{
     DISC[nome].subs.forEach(sub=>{
       totalSubs++;
-      const q=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.q,0);
-      const ac=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
-      totalQ+=q; totalAc+=ac;
+      const qEst=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub&&!s.rev).reduce((a,s)=>a+s.q,0);
+      const acEst=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub&&!s.rev).reduce((a,s)=>a+s.ac,0);
+      const qRev=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub&&s.rev).reduce((a,s)=>a+s.q,0);
+      const acRev=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub&&s.rev).reduce((a,s)=>a+s.ac,0);
+      totalQ+=qEst; totalAc+=acEst;
+      totalQRev+=qRev; totalAcRev+=acRev;
       const st=statusSub(nome,sub);
       if(st.tipo==='ok')subsConcluidos++;
     });
@@ -1400,12 +1470,8 @@ window.gerarRelatorioEdital = function(){
 
   function secaoDisc(nome){
     const disc=DISC[nome];
-    const qD=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.q,0);
-    const acD=d.sessoes.filter(s=>s.disc===nome).reduce((a,s)=>a+s.ac,0);
     const prog=calculoProgressoUnificado(nome);
     const pct=Math.min(100,Math.round((prog.feito/prog.total)*100));
-    const acPct=qD>0?Math.round(acD/qD*100):null;
-    const corAcerto=acPct===null?'#888':acPct>=70?'#4aae6e':acPct>=50?'#e8a24a':'#e05252';
 
     // contagem de subtópicos por status
     const scDisc={ok:0,warn:0,notdef:0,none:0};
@@ -1414,31 +1480,43 @@ window.gerarRelatorioEdital = function(){
     const subsConclDiscStr=scDisc.ok+'/'+totalSubsDisc;
     const corSubsConc=scDisc.ok===totalSubsDisc?'#4aae6e':scDisc.ok>0?'#e8a24a':'#5a7080';
 
+    // acerto split por disciplina para cabeçalho
+    const splitDisc=acertoDiscSplit(nome);
+    const acEstDisc=splitDisc.estudo;
+    const acRevDisc=splitDisc.revisao;
+
     const subsHTML=disc.subs.map(sub=>{
       const st=statusSub(nome,sub);
-      const qS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.q,0);
-      const acS=d.sessoes.filter(s=>s.disc===nome&&s.sub===sub).reduce((a,s)=>a+s.ac,0);
+      const estSess=sessoesEstudo(nome,sub);
+      const revSess=sessoesRevisao(nome,sub);
+      const acEstSub=acertoSessoes(estSess);
+      const acRevSub=acertoSessoes(revSess);
+      const qS=(acEstSub?acEstSub.q:0)+(acRevSub?acRevSub.q:0);
       const icone=st.tipo==='ok'?'✅':st.tipo==='warn'?'⏳':st.tipo==='notdef'?'⚠️':'○';
       const corIcone=st.tipo==='ok'?'#4aae6e':st.tipo==='warn'?'#e8a24a':st.tipo==='notdef'?'#e8a24a':'#3a4a5a';
       const bgRow=st.tipo==='ok'?'rgba(74,174,110,0.04)':st.tipo==='warn'?'rgba(232,162,74,0.04)':'transparent';
-      const acStr=qS>0?Math.round(acS/qS*100)+'% ('+acS+'/'+qS+'q)':'—';
-      const corAc=qS>0?(acS/qS>=.7?'#4aae6e':acS/qS>=.5?'#e8a24a':'#e05252'):'#888';
+      const corAcEst=acEstSub?(acEstSub.pct>=70?'#4aae6e':acEstSub.pct>=50?'#e8a24a':'#e05252'):'#888';
+      const corAcRev=acRevSub?(acRevSub.pct>=70?'#4aae6e':acRevSub.pct>=50?'#e8a24a':'#e05252'):'#5a7080';
       const progPctSub=Math.round(Math.min(100, st.pct||0));
       const miniBar=st.tipo!=='none'?
         '<div style="width:48px;height:3px;background:#1e2d3d;border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:4px">'+
           '<div style="height:100%;width:'+progPctSub+'%;background:'+disc.cor+';border-radius:99px"></div>'+
         '</div>':'';
+      const acEstStr=acEstSub?'<span style="color:'+corAcEst+';font-weight:600">'+acEstSub.pct+'%</span><span style="color:#5a7080;font-size:10px"> ('+acEstSub.q+'q)</span>':'<span style="color:#5a7080">—</span>';
+      const acRevStr=acRevSub?'<span style="color:'+corAcRev+';font-weight:600">🔁 '+acRevSub.pct+'%</span><span style="color:#5a7080;font-size:10px"> ('+acRevSub.q+'q)</span>':'';
       return '<tr style="border-bottom:1px solid #1a2530;background:'+bgRow+'">'+
         '<td style="padding:7px 10px;color:'+corIcone+';font-size:14px;width:28px;text-align:center">'+icone+'</td>'+
         '<td style="padding:7px 10px;font-size:13px;color:#dde6f0">'+sub+'</td>'+
         '<td style="padding:7px 14px;text-align:center;font-size:12px;white-space:nowrap">'+
           '<span style="color:'+corIcone+';font-weight:600">'+st.label+'</span>'+miniBar+
         '</td>'+
-        '<td style="padding:7px 10px;text-align:center;font-size:12px;color:#888">'+( qS>0?qS:'—')+'</td>'+
-        '<td style="padding:7px 10px;text-align:center;font-size:12px;color:'+corAc+';font-weight:'+(qS>0?'600':'400')+'">'+acStr+'</td>'+
+        '<td style="padding:7px 10px;text-align:center;font-size:12px;color:#888">'+(qS>0?qS:'—')+'</td>'+
+        '<td style="padding:7px 10px;font-size:12px">'+acEstStr+(acRevStr?'<br>'+acRevStr:'')+'</td>'+
       '</tr>';
     }).join('');
 
+    const corAcEstDisc=acEstDisc?(acEstDisc.pct>=70?'#4aae6e':acEstDisc.pct>=50?'#e8a24a':'#e05252'):'#5a7080';
+    const corAcRevDisc=acRevDisc?(acRevDisc.pct>=70?'#4aae6e':acRevDisc.pct>=50?'#e8a24a':'#e05252'):'#5a7080';
     return '<div style="margin-bottom:24px;border:1px solid #1e2d3d;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.3)">'+
       '<div style="background:linear-gradient(135deg,#111820 0%,#182030 100%);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e2d3d">'+
         '<div style="flex:1">'+
@@ -1449,11 +1527,15 @@ window.gerarRelatorioEdital = function(){
             '<span style="font-size:11px;color:#5a7080">Subtópicos: <strong style="color:'+corSubsConc+'">'+subsConclDiscStr+'</strong></span>'+
           '</div>'+
         '</div>'+
-        '<div style="text-align:right;min-width:80px">'+
-          (acPct!==null?
-            '<div style="font-size:1.6rem;font-weight:700;color:'+corAcerto+'">'+acPct+'%</div>'+
-            '<div style="font-size:11px;color:#5a7080">acerto ('+acD+'/'+qD+'q)</div>'
-           :'<div style="font-size:12px;color:#5a7080;line-height:1.6">sem questões<br>registradas</div>')+
+        '<div style="text-align:right;min-width:100px">'+
+          (acEstDisc?
+            '<div style="font-size:1.3rem;font-weight:700;color:'+corAcEstDisc+'">'+acEstDisc.pct+'%</div>'+
+            '<div style="font-size:10px;color:#5a7080">1º estudo ('+acEstDisc.q+'q)</div>'+
+            (acRevDisc?
+              '<div style="font-size:.95rem;font-weight:700;color:'+corAcRevDisc+';margin-top:4px">🔁 '+acRevDisc.pct+'%</div>'+
+              '<div style="font-size:10px;color:#5a7080">revisões ('+acRevDisc.q+'q)</div>'
+            :'')
+          :'<div style="font-size:12px;color:#5a7080;line-height:1.6">sem questões<br>registradas</div>')+
         '</div>'+
       '</div>'+
       '<div style="height:6px;background:#0d1520"><div style="height:100%;width:'+pct+'%;background:'+disc.cor+';transition:width .5s;box-shadow:0 0 8px '+disc.cor+'66"></div></div>'+
@@ -1464,7 +1546,7 @@ window.gerarRelatorioEdital = function(){
             '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:left;text-transform:uppercase;letter-spacing:.06em">Subtópico</th>'+
             '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:center;text-transform:uppercase;letter-spacing:.06em">Status</th>'+
             '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:center;width:55px;text-transform:uppercase;letter-spacing:.06em">Qs</th>'+
-            '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:center;width:130px;text-transform:uppercase;letter-spacing:.06em">Acerto</th>'+
+            '<th style="padding:6px 10px;font-size:10px;color:#5a7080;text-align:left;width:140px;text-transform:uppercase;letter-spacing:.06em">Acerto (estudo / revisão)</th>'+
           '</tr></thead>'+
           '<tbody>'+subsHTML+'</tbody>'+
         '</table>'+
@@ -1497,20 +1579,39 @@ window.gerarRelatorioEdital = function(){
       '<div style="font-size:2.2rem;margin-bottom:8px">⚖️</div>'+
       '<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#e8a24a;margin-bottom:2px">Conteúdo Programático — TRT9</div>'+
       '<div style="font-size:12px;color:#5a7080;margin-bottom:20px">Analista Judiciário · Área Judiciária · FCC · Gerado em '+gerado+'</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">'+
-        '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
-          '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+progPct+'%</div>'+
-          '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">PROGRESSO</div></div>'+
-        '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
-          '<div style="font-size:1.5rem;font-weight:700;color:'+corSubsConclGeral+'">'+subsConcluidos+'<span style="font-size:.85rem;color:#5a7080">/'+totalSubs+'</span></div>'+
-          '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">SUBTÓPICOS CONC.</div></div>'+
-        '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
-          '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+totalQ+'</div>'+
-          '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">QUESTÕES</div></div>'+
-        '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
-          '<div style="font-size:1.5rem;font-weight:700;color:'+acertoCorGeral+'">'+(totalQ>0?acertoGeral+'%':'—')+'</div>'+
-          '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">ACERTO GERAL</div></div>'+
-      '</div>'+
+      (()=>{
+        const acRevGeral=totalQRev>0?Math.round(totalAcRev/totalQRev*100):null;
+        const corAcRevGeral=acRevGeral===null?'#5a7080':acRevGeral>=70?'#4aae6e':acRevGeral>=50?'#e8a24a':'#e05252';
+        const gapEdital=acRevGeral!==null?acRevGeral-acertoGeral:null;
+        const gapCor=gapEdital===null?'#5a7080':gapEdital>=0?'#4aae6e':'#e05252';
+        const revFeitasEd=d.revisoes.filter(r=>r.feita).length;
+        const revPendEd=d.revisoes.filter(r=>!r.feita).length;
+        return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">'+
+          '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
+            '<div style="font-size:1.5rem;font-weight:700;color:#e8a24a">'+progPct+'%</div>'+
+            '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">PROGRESSO</div></div>'+
+          '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
+            '<div style="font-size:1.5rem;font-weight:700;color:'+corSubsConclGeral+'">'+subsConcluidos+'<span style="font-size:.85rem;color:#5a7080">/'+totalSubs+'</span></div>'+
+            '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">SUBTÓPICOS CONC.</div></div>'+
+          '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
+            '<div style="font-size:1.5rem;font-weight:700;color:'+acertoCorGeral+'">'+(totalQ>0?acertoGeral+'%':'—')+'</div>'+
+            '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">ACERTO 1º ESTUDO</div></div>'+
+          '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px">'+
+            '<div style="font-size:1.5rem;font-weight:700;color:'+corAcRevGeral+'">'+(acRevGeral!==null?acRevGeral+'%':'—')+'</div>'+
+            '<div style="font-size:10px;color:#5a7080;margin-top:2px;text-transform:uppercase;letter-spacing:.06em">ACERTO REVISÕES</div></div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'+
+          '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:10px;display:flex;align-items:center;justify-content:space-between">'+
+            '<span style="font-size:10px;color:#5a7080;text-transform:uppercase;letter-spacing:.06em">Δ revisão vs. 1º estudo</span>'+
+            '<span style="font-size:1rem;font-weight:700;color:'+gapCor+'">'+(gapEdital!==null?(gapEdital>=0?'+':'')+gapEdital+'pp':'—')+'</span>'+
+          '</div>'+
+          '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:10px;display:flex;align-items:center;justify-content:space-between">'+
+            '<span style="font-size:10px;color:#5a7080;text-transform:uppercase;letter-spacing:.06em">Revisões agendadas</span>'+
+            '<span style="font-size:.9rem;color:#a8bace"><strong style="color:#4aae6e">'+revFeitasEd+'</strong> feitas · <strong style="color:#e8a24a">'+revPendEd+'</strong> pend.</span>'+
+          '</div>'+
+        '</div>';
+      })()
+      +
       '<div style="background:#0a0e13;border:1px solid #1e2d3d;border-radius:8px;padding:12px 14px;margin-bottom:14px;text-align:left">'+
         '<div style="font-size:10px;color:#5a7080;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Subtópicos concluídos por prioridade</div>'+
         '<div style="display:flex;flex-direction:column;gap:6px">'+
@@ -1600,6 +1701,31 @@ const PROB_CONFIG = {
   minQSub: 10,
   k: 0.025
 };
+
+// ── Helpers: separar sessões de revisão das de primeiro estudo ──
+function sessoesEstudo(disc, sub){
+  return window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub&&!s.rev);
+}
+function sessoesRevisao(disc, sub){
+  return window._d.sessoes.filter(s=>s.disc===disc&&s.sub===sub&&s.rev);
+}
+function acertoSessoes(list){
+  const q=list.reduce((a,s)=>a+s.q,0);
+  const ac=list.reduce((a,s)=>a+s.ac,0);
+  return q>0?{pct:Math.round(ac/q*100),q,ac}:null;
+}
+function acertoDiscSplit(disc){
+  const subs=DISC[disc]?DISC[disc].subs:[];
+  let qEst=0,acEst=0,qRev=0,acRev=0;
+  subs.forEach(sub=>{
+    sessoesEstudo(disc,sub).forEach(s=>{qEst+=s.q;acEst+=s.ac;});
+    sessoesRevisao(disc,sub).forEach(s=>{qRev+=s.q;acRev+=s.ac;});
+  });
+  return {
+    estudo: qEst>0?{pct:Math.round(acEst/qEst*100),q:qEst,ac:acEst}:null,
+    revisao: qRev>0?{pct:Math.round(acRev/qRev*100),q:qRev,ac:acRev}:null
+  };
+}
 
 function acertoSubAjustado(disc, sub, sessoes) {
   const qSub = sessoes.filter(s => s.disc === disc && s.sub === sub).reduce((a,s) => a + s.q, 0);
