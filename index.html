@@ -819,7 +819,7 @@ window.registrarSessao=async function(){
   let _revAutoMarcada=null;
   if(rev){
     const revsSubPendentes=window._d.revisoes
-      .filter(r=>r.disc===disc&&r.sub===sub&&!r.feita)
+      .filter(r=>r.disc===disc&&r.sub===sub&&!r.feita&&r.data<=data)
       .sort((a,b)=>a.data.localeCompare(b.data));
     if(revsSubPendentes.length>0){
       revsSubPendentes[0].feita=true;
