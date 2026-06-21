@@ -599,7 +599,7 @@ function iniciarSync(uid){
 window._salvar=async function(){
   if(!userId)return;
   try{
-    await setDoc(doc(db,'usuarios',userId),window._d,{merge:true});
+    await setDoc(doc(db,'usuarios',userId),window._d);
     setSyncStatus('✓ Salvo',true);
   }catch(e){setSyncStatus('⚠ Erro ao salvar',false,true);}
 };
