@@ -94,8 +94,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 .dash-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
 .dash-ring-pct{font-family:var(--serif);font-size:2.6rem;font-weight:700;color:var(--accent);line-height:1;}
 .dash-ring-lbl{font-size:.58rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
-.dash-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;}
-.kpi-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 10px;text-align:center;transition:border-color .2s;}
+.dash-kpi-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%;}
+.kpi-box{flex:0 0 calc(25% - 7.5px);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 10px;text-align:center;transition:border-color .2s;}
 .kpi-box:hover{border-color:var(--border2);}
 .kpi-val{font-family:var(--serif);font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1;}
 .kpi-lbl{font-size:.54rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.07em;}
@@ -327,7 +327,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
         <div class="kpi-box"><div class="kpi-val" id="s-acerto">—</div><div class="kpi-lbl">Acerto</div></div>
         <div class="kpi-box"><div class="kpi-val" id="s-dias">0</div><div class="kpi-lbl">Dias</div></div>
         <div class="kpi-box"><div class="kpi-val" id="s-horas">0h</div><div class="kpi-lbl">Horas</div></div>
-        <div class="kpi-box"><div class="kpi-val" id="s-prob-dash">—</div><div class="kpi-lbl">Prob. conv.</div></div>
+        <div class="kpi-box"><div class="kpi-val" id="s-prob-dash">—</div><div class="kpi-lbl">Prob. hoje</div></div>
+        <div class="kpi-box"><div class="kpi-val" id="s-prob-proj">—</div><div class="kpi-lbl">Prob. projetada</div></div>
       </div>
     </div>
   </div>
@@ -1135,11 +1136,18 @@ function renderStats(){
     const _DGER=["Língua Portuguesa","Raciocínio Lógico-Matemático"];
     const _qEsp=_DESP.reduce((a,d)=>a+PROB_CONFIG.questoesPorDisc[d],0);
     const _qGer=_DGER.reduce((a,d)=>a+PROB_CONFIG.questoesPorDisc[d],0);
-    const _acEsp=_DESP.reduce((a,d)=>a+acertoDiscAtual(d,_sess)*PROB_CONFIG.questoesPorDisc[d],0)/_qEsp;
-    const _acGer=_DGER.reduce((a,d)=>a+acertoDiscAtual(d,_sess)*PROB_CONFIG.questoesPorDisc[d],0)/_qGer;
+    const _acAtual={};const _acProj={};
+    [..._DESP,..._DGER].forEach(d=>{ _acAtual[d]=acertoDiscAtual(d,_sess); _acProj[d]=acertoProjetado(d,_acAtual[d],PROB_CONFIG.horasPlanejadas[d]); });
+    const _acEsp=_DESP.reduce((a,d)=>a+_acAtual[d]*PROB_CONFIG.questoesPorDisc[d],0)/_qEsp;
+    const _acGer=_DGER.reduce((a,d)=>a+_acAtual[d]*PROB_CONFIG.questoesPorDisc[d],0)/_qGer;
+    const _acEspP=_DESP.reduce((a,d)=>a+_acProj[d]*PROB_CONFIG.questoesPorDisc[d],0)/_qEsp;
+    const _acGerP=_DGER.reduce((a,d)=>a+_acProj[d]*PROB_CONFIG.questoesPorDisc[d],0)/_qGer;
     const _p=probConvocacao(notaFinal(_acEsp,_acGer));
+    const _pProj=probConvocacao(notaFinal(_acEspP,_acGerP));
     const pEl=document.getElementById('s-prob-dash');
     if(pEl){pEl.textContent=Math.round(_p*100)+'%';pEl.style.color=corGauge(_p);}
+    const pProjEl=document.getElementById('s-prob-proj');
+    if(pProjEl){pProjEl.textContent=Math.round(_pProj*100)+'%';pProjEl.style.color=corGauge(_pProj);}
   }catch(e){}
   const pct=Math.min(100,_progPct);
   const circ=2*Math.PI*75;
