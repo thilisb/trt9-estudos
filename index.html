@@ -94,7 +94,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
 .dash-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
 .dash-ring-pct{font-family:var(--serif);font-size:2.6rem;font-weight:700;color:var(--accent);line-height:1;}
 .dash-ring-lbl{font-size:.58rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
-.dash-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;}
+.dash-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;}
 .kpi-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 10px;text-align:center;transition:border-color .2s;}
 .kpi-box:hover{border-color:var(--border2);}
 .kpi-val{font-family:var(--serif);font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1;}
@@ -322,6 +322,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:1
       </div>
       <div class="dash-kpi-row">
         <div class="kpi-box"><div class="kpi-val" id="s-aulas">0</div><div class="kpi-lbl">Aulas</div></div>
+        <div class="kpi-box"><div class="kpi-val" id="s-paginas">0</div><div class="kpi-lbl">Páginas</div></div>
         <div class="kpi-box"><div class="kpi-val" id="s-questoes">0</div><div class="kpi-lbl">Questões</div></div>
         <div class="kpi-box"><div class="kpi-val" id="s-acerto">—</div><div class="kpi-lbl">Acerto</div></div>
         <div class="kpi-box"><div class="kpi-val" id="s-dias">0</div><div class="kpi-lbl">Dias</div></div>
@@ -1118,6 +1119,7 @@ function renderStats(){
   const dias=[...new Set(d.sessoes.map(s=>s.data))].length;
   const hTotal = tA*0.5 + tP/25 + tQ*(2/60);
   document.getElementById('s-aulas').textContent=tA;
+  document.getElementById('s-paginas').textContent=tP;
   document.getElementById('s-questoes').textContent=tQ;
   document.getElementById('s-acerto').textContent=tQ>0?Math.round(tAc/tQ*100)+'%':'—';
   document.getElementById('s-dias').textContent=dias;
